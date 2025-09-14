@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS ngos (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+ALTER TABLE ngos ADD COLUMN lat DECIMAL(10,8);
+ALTER TABLE ngos ADD COLUMN lng DECIMAL(11,8);
+ALTER TABLE ngos ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 -- 2) NGO-specific OTP table (similar to donors' flow)
 CREATE TABLE IF NOT EXISTS ngo_email_verifications (
   ngo_id INT NOT NULL REFERENCES ngos(id) ON DELETE CASCADE,
@@ -138,10 +141,4 @@ CREATE INDEX IF NOT EXISTS idx_food_requests_status ON food_requests(status);
 CREATE INDEX IF NOT EXISTS idx_ngo_service_areas_ngo_id ON ngo_service_areas(ngo_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_id, recipient_type);
 
--- Insert sample slum areas (POINT(longitude, latitude) - PostgreSQL standard)
-INSERT INTO slum_areas (name, coordinates, population, description) VALUES
-('East Gate Slum', POINT(77.5946, 12.9716), 1250, 'Main slum area near East Gate railway station'),
-('West Side Community', POINT(77.5846, 12.9816), 980, 'Community area on the western side'),
-('North Block Settlement', POINT(77.6046, 12.9616), 1500, 'Large settlement in the northern block')
-ON CONFLICT DO NOTHING;
 
