@@ -1,9 +1,10 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const { geocodeAddressWithFallback } = require('../utils/geocode');
 const donorModel = require('../models/donorModel'); // Make sure this path is correct
 const { Pool } = require('pg');
-
+// const coords = await geocodeAddressWithFallback(address);
 // Configure database connection
 const pool = new Pool({
     user: process.env.DB_USER,
@@ -70,14 +71,61 @@ exports.verifyEmail = async (req, res) => {
 
 exports.updateDonorProfile = async (req, res) => {
     const { email, restaurantName, branchName, address, phone, openingHours, foodType, description } = req.body;
+    
     try {
+        // First update the basic profile
         await donorModel.updateDonorProfile(email, restaurantName, branchName, address, phone, openingHours, foodType, description);
-        res.status(200).json({ message: 'Profile updated successfully.' });
+        
+        let coords = null;
+        
+        // Geocode the address with proper fallbacks
+        if (address && address.trim()) {
+            try {
+                console.log(`Geocoding donor address: ${address}`);
+                coords = await geocodeAddressWithFallback(address, 'Puducherry', 'Tamil Nadu');
+                
+                if (coords && coords.lat && coords.lng) {
+                    // Get donor to update coordinates
+                    const donor = await donorModel.findDonorByEmail(email);
+                    
+                    if (donor) {
+                        // Update coordinates in database
+                        await donorModel.updateDonorCoordinates(donor.id, coords.lat, coords.lng);
+                        console.log(`✅ Successfully geocoded and saved coordinates: ${coords.lat}, ${coords.lng}`);
+                    }
+                }
+            } catch (geocodeError) {
+                console.error('Geocoding failed:', geocodeError);
+                // Even if geocoding fails, use default coordinates
+                await setDefaultCoordinates(email);
+            }
+        } else {
+            // No address provided, use default coordinates
+            await setDefaultCoordinates(email);
+        }
+        
+        res.status(200).json({ 
+            message: 'Profile updated successfully with location data.', 
+            coordinates: coords 
+        });
     } catch (error) {
         console.error('Profile Update Error:', error);
         res.status(500).json({ message: 'An error occurred while updating the profile.' });
     }
 };
+
+// Helper function to set default coordinates
+async function setDefaultCoordinates(email) {
+    try {
+        const donor = await donorModel.findDonorByEmail(email);
+        if (donor) {
+            await donorModel.updateDonorCoordinates(donor.id, 11.9139, 79.8145);
+            console.log('✅ Set default Puducherry coordinates');
+        }
+    } catch (error) {
+        console.error('Error setting default coordinates:', error);
+    }
+}
 
 exports.loginDonor = async (req, res) => {
     const { email, password } = req.body;

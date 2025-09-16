@@ -16,6 +16,11 @@ router.post('/upload', foodController.uploadFoodPhoto, foodController.uploadFood
 router.get('/available', foodController.getAvailableFood);
 router.get('/donor/:email', foodController.getDonorFoodItems);
 router.get('/food/donor/:email', foodController.getDonorFoodItems);
+router.get('/ngos', foodController.getNgos);
+// Add this route for one-time geocoding fix
+router.get('/geocode-all', foodController.geocodeAllAddresses);
+// Route to geocode missing food items
+router.get('/geocode-missing-items', foodController.geocodeMissingFoodItems);
 // Add this route to your foodRoutes.js
 router.get('/restaurants', foodController.getRestaurants);
 // Food request routes
