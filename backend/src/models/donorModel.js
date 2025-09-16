@@ -113,14 +113,25 @@ exports.getRestaurants = async () => {
     return result.rows;
 };
 // Update donor coordinates (for caching geocoded results)
+// Add this method to your existing donorModel.js
+
+// Update donor coordinates
 exports.updateDonorCoordinates = async (donorId, lat, lng) => {
-    const result = await pool.query(`
+    const query = `
         UPDATE donors 
-        SET lat = $1, lng = $2, updated_at = NOW() 
-        WHERE id = $3 
-        RETURNING id, restaurant_name, lat, lng
-    `, [lat, lng, donorId]);
-    return result.rows[0];
+        SET lat = $1, lng = $2, updated_at = NOW()
+        WHERE id = $3
+        RETURNING *
+    `;
+    
+    const values = [lat, lng, donorId];
+    
+    try {
+        const result = await pool.query(query, values);
+        return result.rows[0];
+    } catch (error) {
+        throw error;
+    }
 };
 
 // Get restaurant by ID
@@ -144,4 +155,14 @@ exports.getRestaurantById = async (id) => {
         WHERE id = $1 AND restaurant_name IS NOT NULL
     `, [id]);
     return result.rows[0];
+};
+// Get donors without coordinates
+exports.getDonorsWithoutCoordinates = async () => {
+    const result = await pool.query(`
+        SELECT * FROM donors 
+        WHERE address IS NOT NULL 
+        AND address != '' 
+        AND (lat IS NULL OR lng IS NULL)
+    `);
+    return result.rows;
 };

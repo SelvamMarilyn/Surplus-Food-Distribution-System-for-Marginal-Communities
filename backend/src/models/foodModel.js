@@ -9,15 +9,24 @@ const pool = new Pool({
 });
 
 // Food Items
-exports.createFoodItem = async (donorId, foodName, quantity, expiryTime, description, photoPath, foodType = 'veg', lat = null, lng = null) => {
-    const result = await pool.query(
-        `INSERT INTO food_items (donor_id, food_name, quantity, expiry_time, description, photo_path, food_type, lat, lng)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-        [donorId, foodName, quantity, expiryTime, description, photoPath, foodType, lat, lng]
-    );
-    return result.rows[0];
+// In foodModel.js
+exports.createFoodItem = async (donorId, foodName, quantity, expiryTime, description, photoPath, foodType, lat = null, lng = null) => {
+    const query = `
+        INSERT INTO food_items 
+        (donor_id, food_name, quantity, expiry_time, description, photo_path, food_type, lat, lng)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING *
+    `;
+    
+    const values = [donorId, foodName, quantity, expiryTime, description, photoPath, foodType, lat, lng];
+    
+    try {
+        const result = await pool.query(query, values);
+        return result.rows[0];
+    } catch (error) {
+        throw error;
+    }
 };
-
 exports.getAvailableFoodItems = async () => {
     const result = await pool.query(
         `SELECT fi.*, d.name as donor_name, d.restaurant_name, d.address as donor_address, d.phone as donor_phone
@@ -208,3 +217,37 @@ exports.markNotificationAsRead = async (notificationId) => {
     return result.rows[0];
 };
 
+// Get food items without coordinates
+exports.getFoodItemsWithoutCoordinates = async () => {
+    const query = `
+        SELECT * FROM food_items 
+        WHERE (lat IS NULL OR lng IS NULL) 
+        AND status != 'Expired'
+    `;
+    
+    try {
+        const result = await pool.query(query);
+        return result.rows;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Update food item coordinates
+exports.updateFoodItemCoordinates = async (foodItemId, lat, lng) => {
+    const query = `
+        UPDATE food_items 
+        SET lat = $1, lng = $2, updated_at = NOW()
+        WHERE id = $3
+        RETURNING *
+    `;
+    
+    const values = [lat, lng, foodItemId];
+    
+    try {
+        const result = await pool.query(query, values);
+        return result.rows[0];
+    } catch (error) {
+        throw error;
+    }
+};

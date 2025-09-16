@@ -10,18 +10,21 @@ function DonorRegistrationForm() {
         name: '',
         email: '',
         password: '',
-        confirmPassword: '', // Added confirm password to state
+        confirmPassword: '',
         restaurantName: '',
         branchName: '',
         address: '',
         contactPersonName: '',
         phone: '',
         openingHours: '',
+        foodType: '',
+        description: '',
         otp: '',
         document: null,
     });
     const [message, setMessage] = useState({ text: '', type: '' });
     const [loading, setLoading] = useState(false);
+    const [geocodeLoading, setGeocodeLoading] = useState(false);
 
     const styles = {
         page: {
@@ -53,7 +56,6 @@ function DonorRegistrationForm() {
             alignItems: 'center',
             marginBottom: '2rem',
         },
-        // Updated styles for larger step dots and lines
         stepDot: {
             height: '30px',
             width: '30px',
@@ -113,6 +115,23 @@ function DonorRegistrationForm() {
             backgroundColor: '#aaa',
             cursor: 'not-allowed',
         },
+        geocodeButton: {
+            width: '100%',
+            padding: '0.5rem',
+            border: '1px solid #007bff',
+            borderRadius: '8px',
+            backgroundColor: '#fff',
+            color: '#007bff',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            marginTop: '0.5rem',
+            transition: 'all 0.3s ease',
+        },
+        geocodeButtonSuccess: {
+            backgroundColor: '#d4edda',
+            color: '#155724',
+            borderColor: '#28a745',
+        },
         message: {
             padding: '1rem',
             borderRadius: '8px',
@@ -141,6 +160,41 @@ function DonorRegistrationForm() {
 
     const handleFileChange = (e) => {
         setFormData(prev => ({ ...prev, document: e.target.files[0] }));
+    };
+
+    // Geocode address to get coordinates
+    const handleGeocodeAddress = async () => {
+        if (!formData.address.trim()) {
+            setMessage({ text: 'Please enter an address first', type: 'error' });
+            return;
+        }
+
+        setGeocodeLoading(true);
+        try {
+            const response = await axios.get('http://localhost:5000/api/food/geocode', {
+                params: { address: formData.address }
+            });
+            
+            if (response.data && response.data.lat && response.data.lng) {
+                setMessage({ 
+                    text: `Location found: ${response.data.lat.toFixed(6)}, ${response.data.lng.toFixed(6)}`, 
+                    type: 'success' 
+                });
+            } else {
+                setMessage({ 
+                    text: 'Could not find exact coordinates, but address will be saved', 
+                    type: 'error' 
+                });
+            }
+        } catch (error) {
+            console.error('Geocoding error:', error);
+            setMessage({ 
+                text: 'Could not verify location, but will proceed with registration', 
+                type: 'error' 
+            });
+        } finally {
+            setGeocodeLoading(false);
+        }
     };
 
     const handleNext = async (e) => {
@@ -172,8 +226,29 @@ function DonorRegistrationForm() {
                 setMessage({ text: 'Email verified successfully! Please enter your restaurant details.', type: 'success' });
                 setStep(3);
             } else if (step === 3) {
-                // Update profile with restaurant details
-                const res = await axios.post('http://localhost:5000/api/donors/update-profile', {
+                // Update profile with restaurant details AND geocode address
+                let coordinates = null;
+                
+                // Try to get coordinates for the address
+                if (formData.address.trim()) {
+                    try {
+                        const geoResponse = await axios.get('http://localhost:5000/api/food/geocode', {
+                            params: { address: formData.address }
+                        });
+                        
+                        if (geoResponse.data && geoResponse.data.lat && geoResponse.data.lng) {
+                            coordinates = {
+                                lat: geoResponse.data.lat,
+                                lng: geoResponse.data.lng
+                            };
+                        }
+                    } catch (geoError) {
+                        console.warn('Geocoding failed during registration:', geoError);
+                        // Continue without coordinates - not critical for registration
+                    }
+                }
+
+                const profileData = {
                     email: formData.email,
                     restaurantName: formData.restaurantName,
                     branchName: formData.branchName,
@@ -182,9 +257,24 @@ function DonorRegistrationForm() {
                     phone: formData.phone,
                     openingHours: formData.openingHours,
                     foodType: formData.foodType,
-                    description: formData.description
-                });
-                setMessage({ text: res.data.message, type: 'success' });
+                    description: formData.description,
+                    ...(coordinates && { lat: coordinates.lat, lng: coordinates.lng })
+                };
+
+                const res = await axios.post('http://localhost:5000/api/donors/update-profile', profileData);
+                
+                if (coordinates) {
+                    setMessage({ 
+                        text: `${res.data.message} Location coordinates saved successfully!`, 
+                        type: 'success' 
+                    });
+                } else {
+                    setMessage({ 
+                        text: `${res.data.message} (Note: Could not determine exact location - you can update this later)`, 
+                        type: 'success' 
+                    });
+                }
+                
                 setStep(4);
             } else if (step === 4) {
                 // Document upload
@@ -196,7 +286,7 @@ function DonorRegistrationForm() {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
                 setMessage({ text: res.data.message, type: 'success' });
-                setStep(5); // Move to a new step for the final success message
+                setStep(5);
             }
         } catch (error) {
             console.error(error);
@@ -322,8 +412,17 @@ function DonorRegistrationForm() {
                                 name="address"
                                 value={formData.address}
                                 onChange={handleChange}
+                                placeholder="Enter full address including city, state"
                                 required
                             />
+                            <button
+                                type="button"
+                                style={styles.geocodeButton}
+                                onClick={handleGeocodeAddress}
+                                disabled={geocodeLoading}
+                            >
+                                {geocodeLoading ? 'Verifying Location...' : '📍 Verify Location'}
+                            </button>
                         </div>
                         <div style={styles.formGroup}>
                             <label style={styles.label} htmlFor="phone">Phone</label>
@@ -346,20 +445,26 @@ function DonorRegistrationForm() {
                                 name="openingHours"
                                 value={formData.openingHours}
                                 onChange={handleChange}
+                                placeholder="e.g., 9:00 AM - 10:00 PM"
                                 required
                             />
                         </div>
                         <div style={styles.formGroup}>
                             <label style={styles.label} htmlFor="foodType">Food Type</label>
-                            <input
+                            <select
                                 style={styles.input}
-                                type="text"
                                 id="foodType"
                                 name="foodType"
                                 value={formData.foodType}
                                 onChange={handleChange}
                                 required
-                            />
+                            >
+                                <option value="">Select Food Type</option>
+                                <option value="Vegetarian">Vegetarian</option>
+                                <option value="Non-Vegetarian">Non-Vegetarian</option>
+                                <option value="Vegan">Vegan</option>
+                                <option value="Mixed">Mixed (Veg & Non-Veg)</option>
+                            </select>
                         </div>
                         <div style={styles.formGroup}>
                             <label style={styles.label} htmlFor="description">Description</label>
@@ -369,8 +474,10 @@ function DonorRegistrationForm() {
                                 name="description"
                                 value={formData.description}
                                 onChange={handleChange}
+                                rows="3"
+                                placeholder="Describe your restaurant and the type of food you typically donate"
                                 required
-                            ></textarea>
+                            />
                         </div>
                         <button style={loading ? { ...styles.button, ...styles.buttonDisabled } : styles.button} type="submit" disabled={loading}>
                             Next
@@ -381,18 +488,22 @@ function DonorRegistrationForm() {
                 return (
                     <>
                         <div style={styles.formGroup}>
-                            <label style={styles.label} htmlFor="document">Upload Document</label>
+                            <label style={styles.label} htmlFor="document">Upload Business Document</label>
+                            <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '0.5rem' }}>
+                                Upload your business license, food safety certificate, or registration document
+                            </p>
                             <input
                                 style={styles.input}
                                 type="file"
                                 id="document"
                                 name="document"
                                 onChange={handleFileChange}
+                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                 required
                             />
                         </div>
                         <button style={loading ? { ...styles.button, ...styles.buttonDisabled } : styles.button} type="submit" disabled={loading}>
-                            Submit
+                            Submit Registration
                         </button>
                     </>
                 );
@@ -400,7 +511,16 @@ function DonorRegistrationForm() {
                 return (
                     <>
                         <div style={{ ...styles.message, ...styles.messageSuccess }}>
-                            Your registration is complete! Your account is now under review by an admin.
+                            🎉 Your registration is complete! 
+                            <br /><br />
+                            Your restaurant account is now under review by our admin team. 
+                            You will receive an email notification once your account is approved.
+                            <br /><br />
+                            <strong>What's next?</strong>
+                            <br />
+                            • Check your email for confirmation
+                            • Once approved, you can start posting surplus food
+                            • Your restaurant will appear on the NGO heat map for food distribution
                         </div>
                         <button style={styles.button} onClick={() => navigate('/')}>
                             Go to Home
@@ -417,7 +537,7 @@ function DonorRegistrationForm() {
             <div style={styles.formContainer}>
                 <h1 style={styles.formTitle}>Donor Registration</h1>
 
-                {/* Step Indicator (5 steps now) */}
+                {/* Step Indicator (5 steps) */}
                 <div style={styles.stepIndicator}>
                     <span style={{ ...styles.stepDot, ...(step >= 1 ? styles.stepComplete : {}) }}>1</span>
                     <span style={{ ...styles.stepLine, ...(step >= 2 ? { backgroundColor: '#28a745' } : {}) }}></span>

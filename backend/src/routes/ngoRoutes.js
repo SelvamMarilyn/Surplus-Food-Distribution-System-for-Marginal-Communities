@@ -25,5 +25,6 @@ router.post('/verify-email', ngoController.verifyEmail);
 router.post('/update-profile', ngoController.updateProfile);
 router.post('/upload-document', upload.single('document'), ngoController.uploadDocument);
 router.post('/login', ngoController.login);
-
+router.get('/profile/:email', ngoController.getNgoProfile);
+router.put('/profile', ngoController.updateCompleteProfile);
 module.exports = router;

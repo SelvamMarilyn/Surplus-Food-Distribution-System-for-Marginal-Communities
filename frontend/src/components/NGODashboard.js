@@ -14,7 +14,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// Custom icon for food locations
+// Custom icons for different marker types
 const foodIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -24,8 +24,7 @@ const foodIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-// Custom icon for NGO locations (marginal communities)
-const ngoIcon = new L.Icon({
+const slumAreaIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
@@ -33,7 +32,7 @@ const ngoIcon = new L.Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
 });
-// Custom icon for restaurants (red markers)
+
 const restaurantIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -42,26 +41,95 @@ const restaurantIcon = new L.Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
 });
+
+const otherNgoIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+const currentNgoIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+
+// Add this right after the icon definitions and before the NGODashboard component
+const distributeMarkers = (items, baseOffset = 0.0002) => {
+  const grouped = {};
+  
+  items.forEach((item, index) => {
+    if (!item.lat || !item.lng) return;
+    
+    const key = `${parseFloat(item.lat).toFixed(4)}_${parseFloat(item.lng).toFixed(4)}`;
+    if (!grouped[key]) {
+      grouped[key] = [];
+    }
+    grouped[key].push({...item, originalIndex: index});
+  });
+  
+  const distributed = [];
+  
+  Object.values(grouped).forEach(group => {
+    if (group.length === 1) {
+      distributed.push(group[0]);
+    } else {
+      // Spread out markers in a circle around the center point
+      group.forEach((item, i) => {
+        const angle = (i * 2 * Math.PI) / group.length;
+        const offset = baseOffset;
+        const latOffset = offset * Math.cos(angle);
+        const lngOffset = offset * Math.sin(angle);
+        
+        distributed.push({
+          ...item,
+          lat: parseFloat(item.lat) + latOffset,
+          lng: parseFloat(item.lng) + lngOffset
+        });
+      });
+    }
+  });
+  
+  return distributed;
+};
 const NGODashboard = () => {
   const [activeTab, setActiveTab] = useState('available');
   const [availableFood, setAvailableFood] = useState([]);
   const [selectedRequests, setSelectedRequests] = useState([]);
   const [slumAreas, setSlumAreas] = useState([]);
+  const [restaurants, setRestaurants] = useState([]);
+  const [otherNgos, setOtherNgos] = useState([]);
   const [ngoInfo, setNgoInfo] = useState({
     name: '',
     email: '',
     area: '',
     peopleServed: 0,
     activeRequests: 0,
-    lat: 12.9716,
-    lng: 77.5946,
+    lat: 11.9139, // Default to Puducherry center
+    lng: 79.8145,
   });
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    registrationNumber: '',
+    contactPerson: '',
+    phone: '',
+    email: '',
+    address: '',
+    area: ''
+  });
+const [profileLoading, setProfileLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [newArea, setNewArea] = useState({ name: '', lat: '', lng: '', population: '', description: '' });
-  const [restaurants, setRestaurants] = useState([]);
+
   // Helper component to capture clicks on the small picker map reliably
   const AreaPicker = ({ onPick }) => {
     useMapEvents({
@@ -71,7 +139,8 @@ const NGODashboard = () => {
     });
     return null;
   };
-  // Add this function to load restaurants
+
+  // Load restaurants
   const loadRestaurants = async () => {
     try {
       const response = await api.get('/food/restaurants');
@@ -81,6 +150,17 @@ const NGODashboard = () => {
     }
   };
 
+  // Load other NGOs
+  const loadOtherNgos = async () => {
+    try {
+      const response = await api.get('/food/ngos');
+      setOtherNgos(response.data || []);
+    } catch (error) {
+      console.error('Error loading other NGOs:', error);
+    }
+  };
+
+  
 
   // Load NGO data on component mount
   useEffect(() => {
@@ -93,27 +173,116 @@ const NGODashboard = () => {
     }
   }, []);
 
-  // Refresh areas when user navigates to Map or Areas tab
+  // Refresh areas, restaurants, and NGOs when user navigates to Map or Areas tab
   useEffect(() => {
     if (activeTab === 'map' || activeTab === 'areas') {
       loadSlumAreas();
-      loadRestaurants(); // Add this line
+      loadRestaurants(); 
+      loadOtherNgos();
     }
   }, [activeTab]);
 
-  const loadNgoInfo = async (email) => {
-    try {
-      // In a real app, you'd fetch this from the backend
-      setNgoInfo(prev => ({
-        ...prev,
-        email: email,
-        name: email.split('@')[0] // Simple name extraction
-      }));
-    } catch (error) {
-      console.error('Error loading NGO info:', error);
-    }
-  };
+const loadNgoInfo = async (email) => {
+  try {
+    console.log('Loading NGO profile for:', email);
+    
+    // Fetch complete NGO profile from backend
+    const response = await api.get(`/ngo/profile/${email}`);
+    console.log('Profile API response:', response);
+    
+    const ngoData = response.data;
+    console.log('NGO data received:', ngoData);
+    
+const parsedLat = Number(ngoData.lat);
+const parsedLng = Number(ngoData.lng);
 
+setNgoInfo(prev => ({
+  ...prev,
+  email: ngoData.email,
+  name: ngoData.name || (ngoData.email ? ngoData.email.split('@')[0] : prev.name),
+  area: ngoData.area || 'Puducherry',
+  peopleServed: ngoData.people_served ?? 0,
+  activeRequests: ngoData.active_requests ?? 0,
+  address: ngoData.address || '',
+  phone: ngoData.phone || '',
+  registrationNumber: ngoData.registration_number || '',
+  // ensure numeric lat/lng
+  lat: Number.isFinite(parsedLat) ? parsedLat : (prev.lat ?? 11.9139),
+  lng: Number.isFinite(parsedLng) ? parsedLng : (prev.lng ?? 79.8145)
+}));
+
+    // Populate profile form
+    setProfileForm({
+      name: ngoData.name || '',
+      registrationNumber: ngoData.registration_number || '',
+      contactPerson: ngoData.name || '', // Fallback to name if no contact person
+      phone: ngoData.phone || '',
+      email: ngoData.email || '',
+      address: ngoData.address || '',
+      area: ngoData.area || 'Puducherry'
+    });
+    
+  } catch (error) {
+    console.error('Error loading NGO info:', error);
+    console.error('Error response:', error.response);
+    
+    // Fallback to basic info
+    const fallbackName = email.split('@')[0];
+    setNgoInfo(prev => ({
+      ...prev,
+      email: email,
+      name: fallbackName
+    }));
+    
+    setProfileForm(prev => ({
+      ...prev,
+      email: email,
+      name: fallbackName
+    }));
+    
+    setMessage({ 
+      text: 'Could not load full profile details', 
+      type: 'warning' 
+    });
+  }
+};
+
+const handleProfileChange = (e) => {
+  const { name, value } = e.target;
+  setProfileForm(prev => ({
+    ...prev,
+    [name]: value
+  }));
+};
+const handleUpdateProfile = async (e) => {
+  e.preventDefault();
+  setProfileLoading(true);
+  
+  try {
+    const response = await api.put('/ngo/profile', {
+      email: profileForm.email,
+      name: profileForm.name,
+      registrationNumber: profileForm.registrationNumber,
+      address: profileForm.address,
+      phone: profileForm.phone,
+      area: profileForm.area
+    });
+
+    setMessage({ text: 'Profile updated successfully!', type: 'success' });
+    
+    // Refresh NGO info
+    await loadNgoInfo(profileForm.email);
+    
+  } catch (error) {
+    console.error('Profile update error:', error);
+    setMessage({ 
+      text: error.response?.data?.message || 'Failed to update profile', 
+      type: 'error' 
+    });
+  } finally {
+    setProfileLoading(false);
+  }
+};
   const loadAvailableFood = async () => {
     try {
       setLoading(true);
@@ -123,7 +292,6 @@ const NGODashboard = () => {
       setAvailableFood(response.data);
     } catch (error) {
       console.error('Error loading available food:', error);
-      console.error('Error response:', error.response);
       setMessage({ text: 'Failed to load available food', type: 'error' });
     } finally {
       setLoading(false);
@@ -135,7 +303,6 @@ const NGODashboard = () => {
       const response = await api.get(`/food/requests/ngo/${email}`);
       setSelectedRequests(response.data);
       
-      // Update NGO info with active requests count
       setNgoInfo(prev => ({
         ...prev,
         activeRequests: response.data.filter(req => req.status === 'Requested').length
@@ -192,7 +359,7 @@ const NGODashboard = () => {
 
     try {
       setLoading(true);
-      const estimatedPickupTime = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
+      const estimatedPickupTime = new Date(Date.now() + 30 * 60 * 1000);
       
       const response = await api.post('/food/request', {
         foodItemId: foodId,
@@ -202,7 +369,6 @@ const NGODashboard = () => {
 
       setMessage({ text: 'Food request submitted successfully!', type: 'success' });
       
-      // Reload data
       loadAvailableFood();
       loadNgoRequests(ngoInfo.email);
     } catch (error) {
@@ -228,15 +394,13 @@ const NGODashboard = () => {
     try {
       setLoading(true);
       
-      // Update request status to delivered
       const response = await api.put(`/food/requests/${proofData.foodItemId}/status`, {
         status: 'Delivered',
-        deliveryProofPath: proofData.photoPath // This would be set by the modal
+        deliveryProofPath: proofData.photoPath
       });
 
       setMessage({ text: 'Proof of delivery submitted successfully!', type: 'success' });
 
-      // Update the status of the item in the UI
       setSelectedRequests(prev => 
         prev.map(req => 
           req.id === proofData.foodItemId 
@@ -245,7 +409,6 @@ const NGODashboard = () => {
         )
       );
       
-      // Reload requests
       loadNgoRequests(ngoInfo.email);
     } catch (error) {
       console.error('Proof submission error:', error);
@@ -266,11 +429,52 @@ const NGODashboard = () => {
     window.location.href = '/';
   };
 
+  // Group food items by restaurant location to create restaurant clusters
+  const groupFoodByRestaurant = (foodItems, restaurants) => {
+    const restaurantClusters = new Map();
+    
+    // First, create clusters for each restaurant
+restaurants.forEach(restaurant => {
+  const rLat = parseFloat(restaurant.lat);
+  const rLng = parseFloat(restaurant.lng);
+  if (Number.isFinite(rLat) && Number.isFinite(rLng)) {
+    const key = `${rLat.toFixed(4)}_${rLng.toFixed(4)}`;
+    restaurantClusters.set(key, {
+      restaurant,
+      foodItems: [],
+      lat: rLat,
+      lng: rLng
+    });
+  }
+});
+    
+    // Then, assign food items to their respective restaurant clusters
+    foodItems.forEach(food => {
+      if (food.lat && food.lng) {
+        const foodKey = `${parseFloat(food.lat).toFixed(4)}_${parseFloat(food.lng).toFixed(4)}`;
+        if (restaurantClusters.has(foodKey)) {
+          restaurantClusters.get(foodKey).foodItems.push(food);
+        }
+      }
+    });
+    
+    return Array.from(restaurantClusters.values());
+  };
+
+  const distributedNgos = distributeMarkers(
+    otherNgos.filter(n => n.lat && n.lng && n.email !== ngoInfo.email), 
+    0.0003
+  );
+  
+  const distributedRestaurants = distributeMarkers(
+    restaurants.filter(r => r.lat && r.lng), 
+    0.0002
+  );
   return (
     <div className="ngo-dashboard">
       <header className="dashboard-header">
         <div className="header-content">
-          <h1>NGO Dashboard</h1>
+          <h1>NGO Dashboard - Puducherry</h1>
           <div className="user-info">
             <span>Welcome, {ngoInfo.name}</span>
             <button className="logout-btn" onClick={handleLogout}>Logout</button>
@@ -346,7 +550,7 @@ const NGODashboard = () => {
         <div className="tab-content">
           {activeTab === 'available' && (
             <div className="available-section">
-              <h2>Available Food for Pickup</h2>
+              <h2>Available Food for Pickup - Puducherry</h2>
               <div className="food-sort-filter">
                 <label>Sort by:</label>
                 <select className="filter-select">
@@ -398,65 +602,282 @@ const NGODashboard = () => {
           
           {activeTab === 'map' && (
             <div className="map-section">
-              <h2>Food Availability Heat Map</h2>
-              <p>Shows available food locations (green markers) and registered service areas (blue markers). Multiple donations at the same location are slightly offset for visibility.</p>
+              <h2>Puducherry Food Distribution Heat Map</h2>
+              <p>Interactive map showing registered restaurants (red), available food (green), service areas (blue), and other NGOs (orange) in Puducherry region.</p>
               
-              {/* Map Statistics */}
-              <div className="map-stats" style={{ marginBottom: '1rem', padding: '0.5rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-                <span style={{ marginRight: '1rem' }}>
-                  📍 <strong>{availableFood.filter(food => food.lat && food.lng).length}</strong> items with locations
-                </span>
-                <span style={{ marginRight: '1rem' }}>
-                  ❓ <strong>{availableFood.filter(food => !food.lat || !food.lng).length}</strong> items without locations
-                </span>
-                <span>
-                  🏢 <strong>{new Set(availableFood.filter(food => food.lat && food.lng).map(food => `${food.donor_address}_${food.restaurant_name}`)).size}</strong> unique locations
-                </span>
+            {/* Map Legend */}
+            <div className="map-legend" style={{ 
+              marginBottom: '1rem', 
+              padding: '1rem', 
+              backgroundColor: '#f8f9fa', 
+              borderRadius: '8px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: '12px', height: '12px', backgroundColor: '#ff4444', borderRadius: '50%' }}></div>
+                <span><strong>{distributedRestaurants.length}</strong> Restaurants</span>
               </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: '12px', height: '12px', backgroundColor: '#44ff44', borderRadius: '50%' }}></div>
+                <span><strong>{availableFood.filter(f => f.lat && f.lng).length}</strong> Food Items</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: '12px', height: '12px', backgroundColor: 'yellow', borderRadius: '50%' }}></div>
+                <span><strong>{distributedNgos.length}</strong> Your Current NGO</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: '12px', height: '12px', backgroundColor: '#ff8844', borderRadius: '50%' }}></div>
+                <span><strong>{distributedNgos.length}</strong> Other NGOs</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: '12px', height: '12px', backgroundColor: '#4444ff', borderRadius: '50%' }}></div>
+                <span><strong>{slumAreas.length}</strong> Service/Slum Areas</span>
+              </div>
+              
+            </div>
 
               <div className="map-container">
                 <MapContainer 
                   center={[ngoInfo.lat, ngoInfo.lng]} 
-                  zoom={13} 
+                  zoom={12} 
                   scrollWheelZoom={true} 
                   className="leaflet-map"
-                  style={{ height: '500px' }}
+                  style={{ height: '600px' }}
                 >
                   <TileLayer
                     attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
                   
-                  {/* NGO location marker */}
-                  <Marker position={[ngoInfo.lat, ngoInfo.lng]} icon={ngoIcon}>
-                    <Popup>
-                      <div>
-                        <h3>Your NGO Location</h3>
-                        <p><strong>Name:</strong> {ngoInfo.name}</p>
-                        <p><strong>Email:</strong> {ngoInfo.email}</p>
-                        <p><strong>Coordinates:</strong> {ngoInfo.lat.toFixed(6)}, {ngoInfo.lng.toFixed(6)}</p>
-                      </div>
-                    </Popup>
-                  </Marker>
+                  {/* Current NGO location marker (blue) */}
+{/* Current NGO location marker (styled much better) */}
+{/* Current NGO location marker - FIXED with orange icon */}
+<Marker position={[ngoInfo.lat, ngoInfo.lng]} icon={currentNgoIcon}>
+  <Popup maxWidth={350}>
+    <div style={{ minWidth: '300px', padding: '12px', fontFamily: 'Arial, sans-serif' }}>
+      <h3 style={{ 
+        margin: '0 0 12px 0', 
+        color: 'dark yellow',
+        fontSize: '18px',
+        borderBottom: '2px solid yellow',
+        paddingBottom: '8px'
+      }}>
+        🏢 Your NGO Headquarters
+      </h3>
+      
+      <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
+        <span style={{ 
+          fontWeight: 'bold', 
+          minWidth: '100px',
+          color: '#2c3e50'
+        }}>Organization:</span>
+        <span style={{ color: '#34495e' }}>{ngoInfo.name}</span>
+      </div>
+      
+      <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
+        <span style={{ 
+          fontWeight: 'bold', 
+          minWidth: '100px',
+          color: '#2c3e50'
+        }}>Email:</span>
+        <span style={{ color: '#34495e', fontSize: '0.9em' }}>{ngoInfo.email}</span>
+      </div>
+      
+      {ngoInfo.area && (
+        <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
+          <span style={{ 
+            fontWeight: 'bold', 
+            minWidth: '100px',
+            color: '#2c3e50'
+          }}>Service Area:</span>
+          <span style={{ color: '#34495e' }}>{ngoInfo.area}</span>
+        </div>
+      )}
+      
+      <div style={{ 
+        marginBottom: '12px', 
+        padding: '8px', 
+        backgroundColor: '#fef9e7', // Light orange background
+        borderRadius: '6px',
+        borderLeft: '4px solid #e67e22'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <span style={{ fontWeight: 'bold', color: '#2c3e50' }}>People Served:</span>
+          <span style={{ color: '#27ae60', fontWeight: 'bold' }}>{ngoInfo.peopleServed}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ fontWeight: 'bold', color: '#2c3e50' }}>Active Requests:</span>
+          <span style={{ color: '#e67e22', fontWeight: 'bold' }}>{ngoInfo.activeRequests}</span>
+        </div>
+      </div>
+      
+      <div style={{ 
+        marginTop: '12px', 
+        padding: '8px', 
+        backgroundColor: '#f8f9fa', 
+        borderRadius: '4px',
+        fontSize: '0.8em',
+        color: '#7f8c8d'
+      }}>
+        <div style={{ marginBottom: '4px' }}>
+          <strong>Coordinates:</strong> {Number(ngoInfo.lat).toFixed(6)}, {Number(ngoInfo.lng).toFixed(6)}
+        </div>
+        <div>
+          <strong>Status:</strong> 
+          <span style={{ 
+            color: '#27ae60', 
+            fontWeight: 'bold',
+            marginLeft: '4px'
+          }}>● Active</span>
+        </div>
+      </div>
+      
+      <button 
+        style={{
+          marginTop: '12px',
+          width: '100%',
+          padding: '8px 16px',
+          backgroundColor: '#e67e22',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontWeight: 'bold',
+          fontSize: '0.9em'
+        }}
+        onClick={() => setActiveTab('profile')}
+      >
+        📋 Edit NGO Profile
+      </button>
+    </div>
+  </Popup>
+</Marker>
 
-                  {/* Food donation markers with enhanced popup */}
+                  {/* Restaurant markers with clustered food items (red) */}
+                  {/* Restaurant markers (red) - with better distribution */}
+{distributedRestaurants.map((restaurant) => {
+  const lat = parseFloat(restaurant.lat);
+  const lng = parseFloat(restaurant.lng);
+  
+  // Find food items from this restaurant
+  const restaurantFood = availableFood.filter(food => 
+    food.donor_id === restaurant.id || 
+    food.restaurant_name === restaurant.restaurant_name
+  );
+  
+  return (
+    <Marker key={`restaurant-${restaurant.id}`} position={[lat, lng]} icon={restaurantIcon}>
+      <Popup maxWidth={350}>
+        <div style={{ minWidth: '300px' }}>
+          <h3 style={{ margin: '0 0 12px 0', color: '#c0392b' }}>
+            🍽️ {restaurant.restaurant_name || restaurant.name}
+          </h3>
+          
+          <div style={{ marginBottom: '12px' }}>
+            <strong>👨‍🍳 Owner:</strong> {restaurant.name}
+          </div>
+          
+          <div style={{ marginBottom: '12px' }}>
+            <strong>📍 Address:</strong> {restaurant.address || 'N/A'}
+          </div>
+          
+          {restaurant.phone && (
+            <div style={{ marginBottom: '12px' }}>
+              <strong>📞 Phone:</strong> {restaurant.phone}
+            </div>
+          )}
+          
+          {restaurant.opening_hours && (
+            <div style={{ marginBottom: '12px' }}>
+              <strong>🕒 Hours:</strong> {restaurant.opening_hours}
+            </div>
+          )}
+          
+          <div style={{ marginBottom: '12px', fontSize: '0.8em', color: '#666' }}>
+            <strong>Coordinates:</strong> {lat.toFixed(6)}, {lng.toFixed(6)}
+          </div>
+          
+          {/* Show available food items from this restaurant */}
+          {restaurantFood.length > 0 && (
+            <div style={{ marginTop: '16px', borderTop: '1px solid #eee', paddingTop: '12px' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#27ae60' }}>
+                🍛 Available Food ({restaurantFood.length} items):
+              </h4>
+              {restaurantFood.slice(0, 3).map((food) => (
+                <div key={food.id} style={{ 
+                  marginBottom: '8px', 
+                  padding: '8px', 
+                  backgroundColor: '#f9f9f9', 
+                  borderRadius: '4px' 
+                }}>
+                  <strong>{food.food_name}</strong> - {food.quantity}
+                  <br />
+                  <small style={{ color: '#e74c3c' }}>
+                    Expires: {calculateTimeLeft(food.expiry_time)}
+                  </small>
+                  <br />
+                  <button 
+                    onClick={() => handleRequestFood(food.id)} 
+                    style={{
+                      backgroundColor: '#27ae60',
+                      color: 'white',
+                      border: 'none',
+                      padding: '4px 8px',
+                      borderRadius: '3px',
+                      cursor: 'pointer',
+                      fontSize: '0.8em',
+                      marginTop: '4px'
+                    }}
+                  >
+                    Request
+                  </button>
+                </div>
+              ))}
+              {restaurantFood.length > 3 && (
+                <div style={{ fontSize: '0.9em', color: '#666', fontStyle: 'italic' }}>
+                  + {restaurantFood.length - 3} more items available...
+                </div>
+              )}
+            </div>
+          )}
+          
+          {restaurantFood.length === 0 && (
+            <div style={{ marginTop: '16px', padding: '8px', backgroundColor: '#fff3cd', borderRadius: '4px' }}>
+              <small style={{ color: '#856404' }}>No food currently available from this restaurant</small>
+            </div>
+          )}
+        </div>
+      </Popup>
+    </Marker>
+  );
+})}
+
+                  {/* Individual food markers for items without restaurant match (green, with slight offset) */}
                   {availableFood.map((food, index) => {
-                    // Only show markers for items with valid coordinates
-                    if (!food.lat || !food.lng) {
-                      return null;
-                    }
+                    if (!food.lat || !food.lng) return null;
 
                     const lat = parseFloat(food.lat);
                     const lng = parseFloat(food.lng);
                     
-                    // Validate coordinates
-                    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-                      console.warn(`Invalid coordinates for food item ${food.id}: ${lat}, ${lng}`);
-                      return null;
-                    }
+                    if (isNaN(lat) || isNaN(lng)) return null;
+
+                    // Check if this food item is already handled by a restaurant cluster
+                    const restaurantClusters = groupFoodByRestaurant(availableFood, restaurants);
+                    const isInCluster = restaurantClusters.some(cluster => 
+                      cluster.foodItems.some(item => item.id === food.id)
+                    );
+
+                    if (isInCluster) return null; // Skip if already shown in restaurant cluster
+
+                    // Add small offset to avoid exact overlap
+                    const offsetLat = lat + (index * 0.0002);
+                    const offsetLng = lng + ((index % 2) * 0.0002);
 
                     return (
-                      <Marker key={`food-${food.id}`} position={[lat, lng]} icon={foodIcon}>
+                      <Marker key={`food-${food.id}`} position={[offsetLat, offsetLng]} icon={foodIcon}>
                         <Popup maxWidth={300}>
                           <div style={{ minWidth: '250px' }}>
                             <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{food.food_name}</h3>
@@ -491,10 +912,6 @@ const NGODashboard = () => {
                               <strong>📍 Address:</strong> {food.donor_address || 'N/A'}
                             </div>
                             
-                            <div style={{ marginBottom: '12px', fontSize: '0.8em', color: '#888' }}>
-                              <strong>Coordinates:</strong> {lat.toFixed(6)}, {lng.toFixed(6)}
-                            </div>
-                            
                             {food.description && (
                               <div style={{ marginBottom: '12px', fontSize: '0.9em', fontStyle: 'italic' }}>
                                 "{food.description}"
@@ -524,16 +941,16 @@ const NGODashboard = () => {
                     );
                   })}
 
-                  {/* Service area markers */}
+                  {/* Service area markers (blue) */}
                   {slumAreas.map((area) => {
                     const lat = parseFloat(area.lat || ngoInfo.lat);
                     const lng = parseFloat(area.lng || ngoInfo.lng);
                     
                     return (
-                      <Marker key={`area-${area.id}`} position={[lat, lng]} icon={ngoIcon}>
+                      <Marker key={`area-${area.id}`} position={[lat, lng]} icon={slumAreaIcon}>
                         <Popup>
                           <div>
-                            <h3>{area.name}</h3>
+                            <h3>🏘️ {area.name}</h3>
                             <p><strong>Population:</strong> {area.population || 'Not specified'}</p>
                             <p><strong>Description:</strong> {area.description || 'No description'}</p>
                             <p style={{ fontSize: '0.8em', color: '#666' }}>
@@ -544,11 +961,37 @@ const NGODashboard = () => {
                       </Marker>
                     );
                   })}
+
+                  {/* Other NGO markers (orange) */}
+                  {/* Other NGO markers (orange) - with better distribution */}
+                  {distributedNgos.map((ngo) => {
+                    const lat = parseFloat(ngo.lat);
+                    const lng = parseFloat(ngo.lng);
+                    
+                    return (
+                      <Marker key={`other-ngo-${ngo.id}`} position={[lat, lng]} icon={otherNgoIcon}>
+                        <Popup>
+                          <div style={{ padding: '8px' }}>
+                            <h3 style={{ margin: '0 0 8px 0', color: '#e67e22' }}>🤝 {ngo.name || 'NGO'}</h3>
+                            <p><strong>Registration:</strong> {ngo.registration_number || 'N/A'}</p>
+                            <p><strong>Address:</strong> {ngo.address || 'N/A'}</p>
+                            <p><strong>Phone:</strong> {ngo.phone || 'N/A'}</p>
+                            <p><strong>Email:</strong> {ngo.email || 'N/A'}</p>
+                            <p style={{ fontSize: '0.8em', color: '#666', marginTop: '8px' }}>
+                              <strong>Coordinates:</strong> {lat.toFixed(6)}, {lng.toFixed(6)}
+                            </p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    );
+                  })}
                 </MapContainer>
               </div>
 
-              {/* Items without location warning */}
-              {availableFood.some(food => !food.lat || !food.lng) && (
+              {/* Missing data warnings */}
+              {(availableFood.some(food => !food.lat || !food.lng) || 
+                restaurants.some(r => !r.lat || !r.lng) || 
+                otherNgos.some(n => !n.lat || !n.lng)) && (
                 <div style={{ 
                   marginTop: '1rem', 
                   padding: '1rem', 
@@ -558,15 +1001,30 @@ const NGODashboard = () => {
                 }}>
                   <h4 style={{ margin: '0 0 8px 0', color: '#856404' }}>⚠️ Items Not Shown on Map</h4>
                   <p style={{ margin: '0 0 8px 0', color: '#856404' }}>
-                    The following items don't have location data and aren't displayed on the map:
+                    Some items don't have location data and aren't displayed:
                   </p>
                   <ul style={{ margin: '0', color: '#856404' }}>
                     {availableFood
                       .filter(food => !food.lat || !food.lng)
                       .map(food => (
-                        <li key={`missing-${food.id}`}>
+                        <li key={`missing-food-${food.id}`}>
                           <strong>{food.food_name}</strong> - {food.restaurant_name || 'Individual Donor'}
-                          {food.donor_address && ` (${food.donor_address})`}
+                        </li>
+                      ))
+                    }
+                    {restaurants
+                      .filter(r => !r.lat || !r.lng)
+                      .map(r => (
+                        <li key={`missing-restaurant-${r.id}`}>
+                          Restaurant: <strong>{r.restaurant_name}</strong>
+                        </li>
+                      ))
+                    }
+                    {otherNgos
+                      .filter(n => !n.lat || !n.lng)
+                      .map(n => (
+                        <li key={`missing-ngo-${n.id}`}>
+                          NGO: <strong>{n.name}</strong>
                         </li>
                       ))
                     }
@@ -652,66 +1110,96 @@ const NGODashboard = () => {
           )}
 
           {activeTab === 'profile' && (
-            <div className="profile-section">
-              <h2>NGO Profile</h2>
-              <div className="profile-form">
-                <div className="form-group">
-                  <label>Organization Name</label>
-                  <input type="text" value={ngoInfo.name} readOnly />
-                </div>
-                <div className="form-group">
-                  <label>Service Area</label>
-                  <input type="text" value={ngoInfo.area} readOnly />
-                </div>
-                <div className="form-group">
-                  <label>Contact Person</label>
-                  <input type="text" defaultValue="Ramesh Kumar" />
-                </div>
-                <div className="form-group">
-                  <label>Phone</label>
-                  <input type="text" defaultValue="+91 9876543210" />
-                </div>
-                <div className="form-group">
-                  <label>Email</label>
-                  <input type="email" defaultValue="contact@hopefoundation.org" />
-                </div>
-                <div className="form-group">
-                  <label>Address</label>
-                  <textarea rows="3" defaultValue="Hope Foundation Office, East Gate Slum Area, City - 123456"></textarea>
-                </div>
-                <button className="update-btn">Update Profile</button>
-              </div>
-            </div>
-          )}
+  <div className="profile-section">
+    <h2>NGO Profile</h2>
+    <form className="profile-form" onSubmit={handleUpdateProfile}>
+      <div className="form-group">
+        <label>Organization Name</label>
+        <input 
+          type="text" 
+          name="name"
+          value={profileForm.name} 
+          onChange={handleProfileChange}
+          required
+        />
+      </div>
+      <div className="form-group">
+        <label>Registration Number</label>
+        <input 
+          type="text" 
+          name="registrationNumber"
+          value={profileForm.registrationNumber} 
+          onChange={handleProfileChange}
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Phone</label>
+        <input 
+          type="text" 
+          name="phone"
+          value={profileForm.phone} 
+          onChange={handleProfileChange}
+          required
+        />
+      </div>
+      <div className="form-group">
+        <label>Email</label>
+        <input 
+          type="email" 
+          name="email"
+          value={profileForm.email} 
+          onChange={handleProfileChange}
+          readOnly
+          className="readonly-input"
+        />
+      </div>
+      <div className="form-group">
+        <label>Address</label>
+        <textarea 
+          rows="3" 
+          name="address"
+          value={profileForm.address} 
+          onChange={handleProfileChange}
+          required
+        ></textarea>
+      </div>
+
+      <button type="submit" className="update-btn" disabled={profileLoading}>
+        {profileLoading ? 'Updating...' : 'Update Profile'}
+      </button>
+    </form>
+  </div>
+)}
 
           {activeTab === 'areas' && (
             <div className="profile-section">
-              <h2>Manage Slum Areas</h2>
+              <h2>Manage Slum Areas - Puducherry</h2>
               <form className="profile-form" onSubmit={handleCreateArea}>
                 <div className="form-group">
-                  <label>Name</label>
+                  <label>Area Name</label>
                   <input type="text" value={newArea.name} onChange={(e)=>setNewArea({...newArea,name:e.target.value})} required />
                 </div>
                 <div className="form-group">
-                  <label>Find by address</label>
+                  <label>Find by address (Puducherry)</label>
                   <div style={{ display:'flex', gap:'8px'}}>
-                    <input type="text" placeholder="e.g., Rainbow Nagar, Puducherry, India" onBlur={async (e)=>{
+                    <input type="text" placeholder="e.g., Rainbow Nagar, Puducherry" onBlur={async (e)=>{
                       const q = e.target.value;
                       if (!q) return;
                       try {
                         const res = await api.get('/food/geocode', { params: { address: q } });
                         if (res.data?.lat && res.data?.lng) {
                           setNewArea(a=>({ ...a, lat: res.data.lat.toFixed(6), lng: res.data.lng.toFixed(6) }));
-                          setMessage({ text: 'Address located. Adjust the pin if needed.', type: 'success' });
+                          setMessage({ text: 'Address located in Puducherry. Adjust the pin if needed.', type: 'success' });
                         }
                       } catch(_){}
                     }} style={{ flex:1 }} />
                   </div>
                 </div>
                 <div className="form-group">
-                  <label>Pick on Map (click to set)</label>
-                  <div style={{height:'240px', border:'1px solid #ddd'}}>
-                    <MapContainer center={[ngoInfo.lat, ngoInfo.lng]} zoom={12} className="leaflet-map" style={{height:'100%'}}
+                  <label>Pick on Map (click to set location)</label>
+                  <div style={{height:'300px', border:'1px solid #ddd'}}>
+                    <MapContainer  center={[ Number(ngoInfo.lat) || 11.9139, Number(ngoInfo.lng) || 79.8145 ]} zoom={13} className="leaflet-map" style={{height:'100%'}}
                     >
                       <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                       <AreaPicker onPick={(latlng)=> setNewArea({...newArea, lat: latlng.lat.toFixed(6), lng: latlng.lng.toFixed(6)})} />

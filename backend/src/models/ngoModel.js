@@ -66,3 +66,139 @@ exports.updateDocumentPathAndStatus = async (email, documentPath) => {
 exports.findNgoById = (id) => {
   return pool.query('SELECT * FROM ngos WHERE id = $1', [id]);
 };
+
+// Replace the existing getNgos function with this:
+exports.getNgos = async () => {
+    const result = await pool.query(`
+        SELECT 
+            id, 
+            name, 
+            email, 
+            registration_number,
+            address, 
+            phone,
+            status,
+            lat,
+            lng,
+            created_at
+        FROM ngos 
+        WHERE status = 'Approved' 
+        AND is_email_verified = TRUE
+        ORDER BY name ASC
+    `);
+    return result.rows;
+};
+
+// Add this function for getting approved NGOs
+exports.getAllApprovedNgos = async () => {
+    const result = await pool.query(`
+        SELECT 
+            id, 
+            name, 
+            email, 
+            registration_number,
+            address, 
+            phone,
+            status,
+            lat,
+            lng,
+            created_at
+        FROM ngos 
+        WHERE status = 'Approved' 
+        AND is_email_verified = TRUE
+        ORDER BY name ASC
+    `);
+    return result.rows;
+};
+
+// Update NGO coordinates (for caching geocoded results)
+// Add this method to your existing ngoModel.js
+
+// Update NGO coordinates
+exports.updateNgoCoordinates = async (ngoId, lat, lng) => {
+    const query = `
+        UPDATE ngos 
+        SET lat = $1, lng = $2, updated_at = NOW()
+        WHERE id = $3
+        RETURNING *
+    `;
+    
+    const values = [lat, lng, ngoId];
+    
+    try {
+        const result = await pool.query(query, values);
+        return result.rows[0];
+    } catch (error) {
+        throw error;
+    }
+};
+// Get NGOs without coordinates
+exports.getNgosWithoutCoordinates = async () => {
+    const result = await pool.query(`
+        SELECT * FROM ngos 
+        WHERE address IS NOT NULL 
+        AND address != '' 
+        AND (lat IS NULL OR lng IS NULL)
+    `);
+    return result.rows;
+};
+// Get active requests count for NGO
+exports.getActiveRequestsCount = async (ngoId) => {
+  const query = `
+    SELECT COUNT(*) FROM food_requests 
+    WHERE ngo_id = $1 AND status = 'Requested'
+  `;
+  
+  try {
+    const result = await pool.query(query, [ngoId]);
+    return parseInt(result.rows[0].count);
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get people served count (estimate)
+exports.getPeopleServedCount = async (ngoId) => {
+  const query = `
+    SELECT COUNT(*) as delivery_count 
+    FROM food_requests 
+    WHERE ngo_id = $1 AND status = 'Delivered'
+  `;
+  
+  try {
+    const result = await pool.query(query, [ngoId]);
+    const deliveryCount = parseInt(result.rows[0].delivery_count);
+    return deliveryCount * 10; // Estimate 10 people per delivery
+  } catch (error) {
+    throw error;
+  }
+};
+exports.findNgoByEmail = async (email) => {
+  return await pool.query(
+    'SELECT * FROM ngos WHERE email = $1',
+    [email]
+  );
+};
+// models/ngoModel.js
+exports.updateCompleteProfile = async (email, { name, registrationNumber, address, phone }) => {
+  const query = `
+    UPDATE ngos
+    SET 
+      name = $1,
+      registration_number = $2,
+      address = $3,
+      phone = $4,
+      updated_at = NOW()
+    WHERE email = $5
+    RETURNING *
+  `;
+  
+  const values = [name, registrationNumber, address, phone, email];
+  
+  try {
+    const result = await pool.query(query, values);
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};

@@ -68,19 +68,16 @@ exports.uploadFoodItem = async (req, res) => {
                         foodLat = coords.lat;
                         foodLng = coords.lng;
                         console.log(`✓ Successfully geocoded donor address to: ${foodLat}, ${foodLng}`);
-                        console.log(`  Address: ${coords.display_name || 'N/A'}`);
-                        console.log(`  Confidence: ${coords.confidence || 'N/A'}`);
                     } else {
                         console.log(`❌ Coordinates outside India bounds: ${coords.lat}, ${coords.lng}`);
                     }
-                } else {
-                    console.log(`❌ No coordinates returned for: ${donor.address}`);
                 }
             } catch (error) {
                 console.log(`Geocoding error for "${donor.address}":`, error.message);
             }
         }
 
+        // Create food item with coordinates
         const foodItem = await foodModel.createFoodItem(
             donor.id, 
             foodName, 
@@ -89,21 +86,14 @@ exports.uploadFoodItem = async (req, res) => {
             description, 
             photoPath, 
             foodType,
-            foodLat,
-            foodLng
+            foodLat,  // Pass latitude
+            foodLng   // Pass longitude
         );
-
-        // Include coordinates in response
-        if (foodLat != null && foodLng != null) {
-            foodItem.lat = foodLat;
-            foodItem.lng = foodLng;
-        }
 
         res.status(201).json({ 
             message: 'Food item uploaded successfully', 
             foodItem,
-            geocoded: foodLat && foodLng ? true : false,
-            coordinates: foodLat && foodLng ? { lat: foodLat, lng: foodLng } : null
+            geocoded: foodLat && foodLng ? true : false
         });
     } catch (error) {
         console.error('Food upload error:', error);
@@ -516,4 +506,129 @@ exports.geocodeTest = async (req, res) => {
         res.status(500).json({ message: 'Geocode failed' });
     }
 };
+// Add this to your foodController.js exports
+exports.getNgos = async (req, res) => {
+    try {
+        const ngos = await ngoModel.getNgos();
+        res.json(ngos);
+    } catch (error) {
+        console.error('Get NGOs error:', error);
+        res.status(500).json({ message: 'Failed to fetch NGOs' });
+    }
+};
+// One-time function to geocode all existing addresses
+exports.geocodeAllAddresses = async (req, res) => {
+    try {
+        console.log('Geocoding all existing addresses...');
+        
+        // Geocode all donors with addresses but no coordinates
+        const donors = await donorModel.getDonorsWithoutCoordinates();
+        console.log(`Found ${donors.length} donors without coordinates`);
+        
+        for (const donor of donors) {
+            if (donor.address && donor.address.trim().length > 0) {
+                try {
+                    console.log(`Geocoding donor: ${donor.restaurant_name || donor.name}`);
+                    const coords = await geocodeAddress(donor.address);
+                    
+                    if (coords && coords.lat && coords.lng) {
+                        await donorModel.updateDonorCoordinates(donor.id, coords.lat, coords.lng);
+                        console.log(`✓ Geocoded donor: ${donor.restaurant_name}`);
+                    }
+                } catch (error) {
+                    console.log(`Error geocoding donor ${donor.id}: ${error.message}`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 500)); // Rate limiting
+            }
+        }
+        
+        // Geocode all NGOs with addresses but no coordinates
+        const ngos = await ngoModel.getNgosWithoutCoordinates();
+        console.log(`Found ${ngos.length} NGOs without coordinates`);
+        
+        for (const ngo of ngos) {
+            if (ngo.address && ngo.address.trim().length > 0) {
+                try {
+                    console.log(`Geocoding NGO: ${ngo.name}`);
+                    const coords = await geocodeAddress(ngo.address);
+                    
+                    if (coords && coords.lat && coords.lng) {
+                        await ngoModel.updateNgoCoordinates(ngo.id, coords.lat, coords.lng);
+                        console.log(`✓ Geocoded NGO: ${ngo.name}`);
+                    }
+                } catch (error) {
+                    console.log(`Error geocoding NGO ${ngo.id}: ${error.message}`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 500)); // Rate limiting
+            }
+        }
+        
+        res.json({ message: 'Geocoding completed for all addresses' });
+        
+    } catch (error) {
+        console.error('Geocode all addresses error:', error);
+        res.status(500).json({ message: 'Failed to geocode addresses' });
+    }
+};
 
+// Function to geocode and update food items with missing coordinates
+exports.geocodeMissingFoodItems = async (req, res) => {
+    try {
+        console.log('Geocoding food items with missing coordinates...');
+        
+        // Get food items without coordinates
+        const foodItems = await foodModel.getFoodItemsWithoutCoordinates();
+        console.log(`Found ${foodItems.length} food items without coordinates`);
+        
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (const item of foodItems) {
+            try {
+                // Get donor info for this food item
+                const donor = await donorModel.getDonorById(item.donor_id);
+                
+                if (donor && donor.address && donor.address.trim().length > 0) {
+                    console.log(`Geocoding address for food item ${item.id}: ${donor.address}`);
+                    
+                    const coords = await geocodeAddress(donor.address);
+                    
+                    if (coords && coords.lat && coords.lng) {
+                        // Validate coordinates are within India
+                        if (coords.lat >= 6.0 && coords.lat <= 37.6 && coords.lng >= 68.7 && coords.lng <= 97.25) {
+                            // Update food item with coordinates
+                            await foodModel.updateFoodItemCoordinates(item.id, coords.lat, coords.lng);
+                            console.log(`✓ Updated food item ${item.id} with coordinates: ${coords.lat}, ${coords.lng}`);
+                            successCount++;
+                        } else {
+                            console.log(`❌ Coordinates outside India bounds for food item ${item.id}`);
+                            failCount++;
+                        }
+                    } else {
+                        console.log(`❌ Failed to geocode address for food item ${item.id}`);
+                        failCount++;
+                    }
+                } else {
+                    console.log(`❌ No address available for donor of food item ${item.id}`);
+                    failCount++;
+                }
+            } catch (error) {
+                console.log(`Error processing food item ${item.id}:`, error.message);
+                failCount++;
+            }
+            
+            // Add delay to respect rate limits
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        res.json({ 
+            message: `Geocoding completed. Success: ${successCount}, Failed: ${failCount}`,
+            successCount,
+            failCount
+        });
+        
+    } catch (error) {
+        console.error('Geocode missing food items error:', error);
+        res.status(500).json({ message: 'Failed to geocode missing food items' });
+    }
+};
