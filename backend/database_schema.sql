@@ -20,14 +20,16 @@ ALTER TABLE donors ADD COLUMN lat DECIMAL(10,8);
 ALTER TABLE donors ADD COLUMN lng DECIMAL(11,8);
 ALTER TABLE donors ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 ALTER TABLE donors ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
-
+select * from donors;
+delete from donors where id=13;
 CREATE TABLE email_verifications (
     donor_id INT NOT NULL REFERENCES donors(id),
     otp VARCHAR(6) NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (donor_id)
 );
-
+select * from email_verifications;
+delete from email_verifications where donor_id=11;
 -- 1) NGOs table
 CREATE TABLE IF NOT EXISTS ngos (
   id SERIAL PRIMARY KEY,
@@ -42,7 +44,8 @@ CREATE TABLE IF NOT EXISTS ngos (
   document_path VARCHAR(255),
   created_at TIMESTAMPTZ DEFAULT now()
 );
-
+select * from ngos;
+delete from ngos where id=9;
 ALTER TABLE ngos ADD COLUMN lat DECIMAL(10,8);
 ALTER TABLE ngos ADD COLUMN lng DECIMAL(11,8);
 ALTER TABLE ngos ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
@@ -53,7 +56,8 @@ CREATE TABLE IF NOT EXISTS ngo_email_verifications (
   expires_at TIMESTAMPTZ NOT NULL,
   PRIMARY KEY (ngo_id)
 );
-
+select * from ngo_email_verifications;
+delete from ngo_email_verifications where ngo_id=9;
 -- 1. Food Items table (for donor uploads)
 CREATE TABLE IF NOT EXISTS food_items (
     id SERIAL PRIMARY KEY,

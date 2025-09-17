@@ -100,6 +100,16 @@ const LoginPage = () => {
     alert(`Password reset link sent to ${loginData.email}`);
   };
 
+  const handleSignupRedirect = () => {
+    if (loginData.userType === 'donor') {
+      navigate('/register-donor');
+    } else if (loginData.userType === 'ngo') {
+      navigate('/register-ngo');
+    } else {
+      setMessage({ text: 'Admin accounts are created by system administrators', type: 'error' });
+    }
+  };
+
   return (
     <div className="login-page">
       <div className="login-container">
@@ -107,9 +117,9 @@ const LoginPage = () => {
           <div className="brand-section">
             <div className="logo">
               <div className="logo-icon">🍽️</div>
-              <h1>FoodBridge</h1>
+              <h1>HopeBites</h1>
             </div>
-            <p className="tagline">Connecting surplus food with those in need</p>
+            <p className="tagline">Surplus for Sustenance - Connecting food donors with community partners</p>
           </div>
           <div className="features">
             <div className="feature">
@@ -262,21 +272,6 @@ const LoginPage = () => {
                   Register Now
                 </button>
               </p>
-            </div>
-
-            <div className="demo-accounts">
-              <h4>Demo Accounts</h4>
-              <div className="demo-list">
-                <div className="demo-item">
-                  <strong>Donor:</strong> donor@demo.com / demo123
-                </div>
-                <div className="demo-item">
-                  <strong>NGO:</strong> ngo@demo.com / demo123
-                </div>
-                <div className="demo-item">
-                  <strong>Admin:</strong> admin@demo.com / admin123
-                </div>
-              </div>
             </div>
           </div>
         </div>

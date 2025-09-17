@@ -32,17 +32,62 @@ const register = async (req, res) => {
     }
 
     const result = await ngoModel.createNgo({ name, email, password });
-    const ngo = result.rows[0];
+    const ngo = result.rows[0];git
 
     // generate OTP, save, send email
     const otp = generateOtp();
     await ngoModel.saveOtp(ngo.id, otp);
 
     const mailOptions = {
-      from: `"Surplus Food" <${process.env.EMAIL_USER}>`,
+      from: `"HopeBites Platform" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Your NGO Registration OTP',
-      html: `<p>Hello ${name},</p><p>Your OTP for NGO registration is <b>${otp}</b>. It expires in 15 minutes.</p>`
+      subject: 'Welcome to HopeBites - NGO Email Verification',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">HopeBites</h1>
+            <p style="color: white; margin: 10px 0 0 0; font-size: 16px;">Food Distribution Platform</p>
+          </div>
+          
+          <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #333; margin-bottom: 20px;">Welcome to HopeBites, ${name}!</h2>
+            
+            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+              Thank you for joining HopeBites as a partner organization! We're excited to work with you in our mission to reduce food waste and serve communities in need.
+            </p>
+            
+            <div style="background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+              <p style="color: #333; margin: 0; font-size: 14px; font-weight: 500;">Your verification code is:</p>
+              <h1 style="color: #ff6b6b; margin: 10px 0; font-size: 32px; letter-spacing: 3px;">${otp}</h1>
+              <p style="color: #666; margin: 0; font-size: 12px;">Valid for 15 minutes</p>
+            </div>
+            
+            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+              Enter this code in the verification field to complete your NGO account setup. Once verified, you'll be able to request food donations from our network of generous donors.
+            </p>
+            
+            <div style="background: #e8f5e8; border: 1px solid #c3e6cb; border-radius: 8px; padding: 15px; margin: 20px 0;">
+              <p style="color: #155724; margin: 0; font-size: 14px;">
+                <strong>🤝 Partnership Benefits:</strong><br/>
+                • Connect with local food donors<br/>
+                • Receive surplus food for your community<br/>
+                • Track your impact and donations
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+              <p style="color: #999; font-size: 14px; margin: 0;">
+                Best regards,<br>
+                <strong>The HopeBites Team</strong>
+              </p>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
+            <p>This is an automated message. Please do not reply to this email.</p>
+          </div>
+        </div>
+      `
     };
 
     await transporter.sendMail(mailOptions);

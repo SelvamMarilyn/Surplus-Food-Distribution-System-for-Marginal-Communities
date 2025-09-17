@@ -24,39 +24,87 @@ function NGORegistrationForm() {
     const BACKEND = 'http://localhost:5000/api/ngo';
 
     const styles = {
-        page: { 
-            fontFamily: 'Poppins, sans-serif', 
-            backgroundColor: '#e8f2f0', 
-            minHeight: '100vh', 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            padding: '2rem' 
+        page: {
+            fontFamily: "'Cormorant Garamond', serif",
+            backgroundColor: '#121212',
+            minHeight: '100vh',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '2rem',
+            position: 'relative',
+            overflow: 'hidden',
         },
-        container: { 
-            background: '#fff', 
-            padding: '2.5rem', 
-            borderRadius: '12px', 
-            width: '100%', 
-            maxWidth: '520px', 
-            boxShadow: '0 10px 30px rgba(0,0,0,0.08)' 
+        backgroundPattern: {
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            background: `
+                radial-gradient(circle at 20% 50%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(254, 202, 87, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%)
+            `,
+            zIndex: 0,
         },
-        input: { 
-            width: '100%', 
-            padding: '0.75rem', 
-            borderRadius: '8px', 
-            border: '1px solid #ddd', 
-            marginBottom: '1rem',
-            boxSizing: 'border-box'
+        container: {
+            background: 'rgba(38, 36, 36, 0.95)',
+            backdropFilter: 'blur(20px)',
+            padding: '3rem 3.5rem',
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '600px',
+            boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            position: 'relative',
+            zIndex: 1,
         },
-        button: { 
-            width: '100%', 
-            padding: '0.75rem', 
-            borderRadius: '8px', 
-            background: '#28a745', 
-            color: '#fff', 
-            border: 'none', 
-            fontWeight: '700' 
+        formTitle: {
+            fontSize: '2.5rem',
+            marginBottom: '2rem',
+            color: '#feca57',
+            fontFamily: "'Great Vibes', cursive",
+            fontWeight: '400',
+            textAlign: 'center',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+        },
+        input: {
+            width: '100%',
+            padding: '1rem 1.25rem',
+            borderRadius: '12px',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            marginBottom: '1.5rem',
+            fontSize: '1.1rem',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            color: '#f7fafc',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.3s ease',
+            boxSizing: 'border-box',
+        },
+        inputFocus: {
+            borderColor: '#feca57',
+            boxShadow: '0 0 20px rgba(254, 202, 87, 0.3)',
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        },
+        button: {
+            width: '100%',
+            padding: '1.25rem 2rem',
+            borderRadius: '15px',
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
+            color: '#fff',
+            border: 'none',
+            fontWeight: 'bold',
+            fontSize: '1.3rem',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            boxShadow: '0 8px 25px rgba(255, 107, 107, 0.3)',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+        },
+        buttonHover: {
+            transform: 'translateY(-3px)',
+            boxShadow: '0 12px 35px rgba(255, 107, 107, 0.4)',
         },
         geocodeButton: {
             width: '100%',
@@ -71,18 +119,68 @@ function NGORegistrationForm() {
             marginBottom: '1rem',
             transition: 'all 0.3s ease',
         },
-        message: { 
-            padding: '1rem', 
-            borderRadius: '8px', 
-            marginTop: '1rem' 
+        buttonDisabled: {
+            background: 'rgba(255, 255, 255, 0.2)',
+            cursor: 'not-allowed',
+            transform: 'none',
+            boxShadow: 'none',
         },
-        success: { 
-            background: '#d4edda', 
-            color: '#155724' 
+        message: {
+            padding: '1.5rem',
+            borderRadius: '12px',
+            marginTop: '1.5rem',
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
         },
-        error: { 
-            background: '#f8d7da', 
-            color: '#721c24' 
+        success: {
+            background: 'rgba(34, 197, 94, 0.2)',
+            color: '#10b981',
+            borderColor: 'rgba(34, 197, 94, 0.3)',
+        },
+        error: {
+            background: 'rgba(239, 68, 68, 0.2)',
+            color: '#f87171',
+            borderColor: 'rgba(239, 68, 68, 0.3)',
+        },
+                stepIndicator: {
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: '2rem',
+        },
+        stepDot: {
+            height: '40px',
+            width: '40px',
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#f7fafc',
+            fontSize: '1.3rem',
+            fontWeight: 'bold',
+            transition: 'all 0.3s ease',
+            border: '2px solid rgba(255, 255, 255, 0.3)',
+        },
+        stepComplete: {
+            backgroundColor: '#feca57',
+            color: '#121212',
+            borderColor: '#feca57',
+            boxShadow: '0 0 20px rgba(254, 202, 87, 0.4)',
+        },
+        stepLine: {
+            width: '80px',
+            height: '3px',
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            margin: '0 10px',
+            transition: 'all 0.3s ease',
+            borderRadius: '2px',
+        },
+        stepLineComplete: {
+            backgroundColor: '#feca57',
+            boxShadow: '0 0 10px rgba(254, 202, 87, 0.3)',
         },
         label: {
             display: 'block',
@@ -99,7 +197,26 @@ function NGORegistrationForm() {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
+    const handleInputFocus = (e) => {
+        Object.assign(e.target.style, styles.inputFocus);
+    };
 
+    const handleInputBlur = (e) => {
+        e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+        e.target.style.boxShadow = 'none';
+        e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+    };
+
+    const handleButtonHover = (e, isHovering) => {
+        if (!loading) {
+            if (isHovering) {
+                Object.assign(e.currentTarget.style, styles.buttonHover);
+            } else {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(255, 107, 107, 0.3)';
+            }
+        }
+    };
     const handleFile = (e) => {
         const file = e.target.files[0];
         console.log("Selected file:", file);
@@ -243,100 +360,129 @@ function NGORegistrationForm() {
         if (step === 1) {
             return (
                 <>
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Organization / NGO Name</label>
-                        <input 
-                            name="name" 
-                            placeholder="Enter your organization name" 
-                            style={styles.input} 
-                            value={formData.name} 
-                            onChange={handleChange} 
-                            required 
-                        />
-                    </div>
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Email Address</label>
-                        <input 
-                            name="email" 
-                            placeholder="organization@email.com" 
-                            style={styles.input} 
-                            value={formData.email} 
-                            onChange={handleChange} 
-                            type="email" 
-                            required 
-                        />
-                    </div>
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Password</label>
-                        <input 
-                            name="password" 
-                            placeholder="Create a strong password" 
-                            style={styles.input} 
-                            value={formData.password} 
-                            onChange={handleChange} 
-                            type="password" 
-                            required 
-                        />
-                    </div>
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Confirm Password</label>
-                        <input 
-                            name="confirmPassword" 
-                            placeholder="Confirm your password" 
-                            style={styles.input} 
-                            value={formData.confirmPassword} 
-                            onChange={handleChange} 
-                            type="password" 
-                            required 
-                        />
-                    </div>
-                    <button style={styles.button} type="submit" disabled={loading}>
-                        {loading ? 'Creating Account...' : 'Register'}
-                    </button>
-                </>
+                <div style={{marginBottom: '1.5rem'}}>
+                    <label style={{display: 'block', marginBottom: '0.75rem', color: '#feca57', fontWeight: '600', fontSize: '1.1rem'}}>🏢 Organization Name</label>
+                    <input 
+                        name="name" 
+                        placeholder="Enter your NGO/Organization name" 
+                        style={styles.input} 
+                        value={formData.name} 
+                        onChange={handleChange} 
+                        onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
+                        required 
+                    />
+                </div>
+                <div style={{marginBottom: '1.5rem'}}>
+                    <label style={{display: 'block', marginBottom: '0.75rem', color: '#feca57', fontWeight: '600', fontSize: '1.1rem'}}>📧 Email Address</label>
+                    <input 
+                        name="email" 
+                        placeholder="your.organization@example.com" 
+                        style={styles.input} 
+                        value={formData.email} 
+                        onChange={handleChange} 
+                        onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
+                        type="email" 
+                        required 
+                    />
+                </div>
+                <div style={{marginBottom: '1.5rem'}}>
+                    <label style={{display: 'block', marginBottom: '0.75rem', color: '#feca57', fontWeight: '600', fontSize: '1.1rem'}}>🔒 Password</label>
+                    <input 
+                        name="password" 
+                        placeholder="Create a strong password" 
+                        style={styles.input} 
+                        value={formData.password} 
+                        onChange={handleChange} 
+                        onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
+                        type="password" 
+                        required 
+                    />
+                </div>
+                <div style={{marginBottom: '1.5rem'}}>
+                    <label style={{display: 'block', marginBottom: '0.75rem', color: '#feca57', fontWeight: '600', fontSize: '1.1rem'}}>🔒 Confirm Password</label>
+                    <input 
+                        name="confirmPassword" 
+                        placeholder="Confirm your password" 
+                        style={styles.input} 
+                        value={formData.confirmPassword} 
+                        onChange={handleChange} 
+                        onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
+                        type="password" 
+                        required 
+                    />
+                </div>
+                <button 
+                    style={loading ? { ...styles.button, ...styles.buttonDisabled } : styles.button} 
+                    type="submit" 
+                    disabled={loading}
+                    onMouseEnter={(e) => handleButtonHover(e, true)}
+                    onMouseLeave={(e) => handleButtonHover(e, false)}
+                >
+                    {loading ? '⏳ Creating Account...' : '🚀 Create Account'}
+                </button>
+            </>
             );
         } else if (step === 2) {
             return (
                 <>
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Enter OTP</label>
-                        <input 
-                            name="otp" 
-                            placeholder="6-digit OTP from email" 
-                            style={styles.input} 
-                            value={formData.otp} 
-                            onChange={handleChange} 
-                            required 
-                        />
-                    </div>
-                    <button style={styles.button} type="submit" disabled={loading}>
-                        {loading ? 'Verifying...' : 'Verify Email'}
-                    </button>
-                </>
+                <div style={{marginBottom: '1.5rem'}}>
+                    <label style={{display: 'block', marginBottom: '0.75rem', color: '#feca57', fontWeight: '600', fontSize: '1.1rem'}}>🔐 Verification Code</label>
+                    <input 
+                        name="otp" 
+                        placeholder="Enter 6-digit code from email" 
+                        style={styles.input} 
+                        value={formData.otp} 
+                        onChange={handleChange} 
+                        onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
+                        maxLength="6"
+                        required 
+                    />
+                    <p style={{color: '#e2e8f0', fontSize: '0.9rem', marginTop: '0.5rem', opacity: '0.8'}}>
+                        📧 Check your email for the verification code
+                    </p>
+                </div>
+                <button 
+                    style={loading ? { ...styles.button, ...styles.buttonDisabled } : styles.button} 
+                    type="submit" 
+                    disabled={loading}
+                    onMouseEnter={(e) => handleButtonHover(e, true)}
+                    onMouseLeave={(e) => handleButtonHover(e, false)}
+                >
+                    {loading ? '⏳ Verifying...' : '✅ Verify Email'}
+                </button>
+            </>
             );
         } else if (step === 3) {
             return (
                 <>
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Registration Number (Optional)</label>
-                        <input 
-                            name="registrationNumber" 
-                            placeholder="NGO/Trust registration number" 
-                            style={styles.input} 
-                            value={formData.registrationNumber} 
-                            onChange={handleChange} 
-                        />
-                    </div>
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Full Address</label>
-                        <textarea 
-                            name="address" 
-                            placeholder="Enter complete address including city, state, pincode" 
-                            style={{...styles.input, minHeight: '80px', resize: 'vertical'}} 
-                            value={formData.address} 
-                            onChange={handleChange} 
-                            required
-                        />
+                <div style={{marginBottom: '1.5rem'}}>
+                    <label style={{display: 'block', marginBottom: '0.75rem', color: '#feca57', fontWeight: '600', fontSize: '1.1rem'}}>📋 Registration Number (Optional)</label>
+                    <input 
+                        name="registrationNumber" 
+                        placeholder="NGO/Trust registration number" 
+                        style={styles.input} 
+                        value={formData.registrationNumber} 
+                        onChange={handleChange} 
+                        onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
+                    />
+                </div>
+                <div style={{marginBottom: '1.5rem'}}>
+                    <label style={{display: 'block', marginBottom: '0.75rem', color: '#feca57', fontWeight: '600', fontSize: '1.1rem'}}>📍 Organization Address</label>
+                    <input 
+                        name="address" 
+                        placeholder="Street, City, State, ZIP Code" 
+                        style={styles.input} 
+                        value={formData.address} 
+                        onChange={handleChange} 
+                        onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
+                    />     
                         <button
                             type="button"
                             style={styles.geocodeButton}
@@ -346,123 +492,141 @@ function NGORegistrationForm() {
                             {geocodeLoading ? 'Verifying Location...' : '📍 Verify Location'}
                         </button>
                     </div>
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Phone Number</label>
-                        <input 
-                            name="phone" 
-                            placeholder="+91 XXXXXXXXXX" 
-                            style={styles.input} 
-                            value={formData.phone} 
-                            onChange={handleChange} 
-                            type="tel"
-                        />
-                    </div>
-                    <button style={styles.button} type="submit" disabled={loading}>
-                        {loading ? 'Saving Details...' : 'Save Details'}
-                    </button>
-                </>
+                <div style={{marginBottom: '1.5rem'}}>
+                    <label style={{display: 'block', marginBottom: '0.75rem', color: '#feca57', fontWeight: '600', fontSize: '1.1rem'}}>📞 Contact Phone</label>
+                    <input 
+                        name="phone" 
+                        placeholder="+91 XXXXXXXXXX" 
+                        style={styles.input} 
+                        value={formData.phone} 
+                        onChange={handleChange} 
+                        onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
+                        type="tel"
+                    />
+                </div>
+                <button 
+                    style={loading ? { ...styles.button, ...styles.buttonDisabled } : styles.button} 
+                    type="submit" 
+                    disabled={loading}
+                    onMouseEnter={(e) => handleButtonHover(e, true)}
+                    onMouseLeave={(e) => handleButtonHover(e, false)}
+                >
+                    {loading ? '⏳ Saving Details...' : '➡️ Continue to Document Upload'}
+                </button>
+            </>
             );
         } else if (step === 4) {
             return (
                 <>
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Upload Registration Document</label>
-                        <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '0.5rem' }}>
-                            Upload NGO registration certificate, trust deed, or other legal document
-                        </p>
-                        <input
-                            name="document"
-                            type="file"
-                            style={styles.input}
-                            onChange={handleFile}
-                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                            required
-                        />
+                    <div style={{marginBottom: '1.5rem'}}>
+                        <label style={{display: 'block', marginBottom: '0.75rem', color: '#feca57', fontWeight: '600', fontSize: '1.1rem'}}>📄 Organization Documents</label>
+                        <div style={{
+                            border: '2px dashed rgba(254, 202, 87, 0.5)',
+                            borderRadius: '12px',
+                            padding: '2rem',
+                            textAlign: 'center',
+                            backgroundColor: 'rgba(254, 202, 87, 0.1)',
+                            transition: 'all 0.3s ease'
+                        }}>
+                            <input
+                                name="document"
+                                type="file"
+                                style={{
+                                    ...styles.input,
+                                    border: 'none',
+                                    backgroundColor: 'transparent',
+                                    padding: '0',
+                                    textAlign: 'center'
+                                }}
+                                onChange={handleFile}
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                required
+                            />
+                            <p style={{color: '#e2e8f0', margin: '1rem 0 0 0', fontSize: '0.9rem'}}>
+                                📋 Upload your NGO registration, license, or certification document<br/>
+                                <span style={{opacity: '0.7'}}>Accepted formats: PDF, JPG, PNG (Max 5MB)</span>
+                            </p>
+                        </div>
                     </div>
-                    <button style={styles.button} type="submit" disabled={loading}>
-                        {loading ? 'Uploading...' : 'Upload Document'}
+                    <button 
+                        style={loading ? { ...styles.button, ...styles.buttonDisabled } : styles.button} 
+                        type="submit" 
+                        disabled={loading}
+                        onMouseEnter={(e) => handleButtonHover(e, true)}
+                        onMouseLeave={(e) => handleButtonHover(e, false)}
+                    >
+                        {loading ? '⏳ Uploading...' : '🚀 Complete Registration'}
                     </button>
                 </>
             );
         } else if (step === 5) {
             return (
                 <>
-                    <div style={{ ...styles.message, ...styles.success }}>
-                        🎉 Registration Complete!
-                        <br /><br />
-                        Your NGO registration has been submitted successfully. 
-                        Your account is now under admin review.
-                        <br /><br />
-                        <strong>What happens next?</strong>
-                        <br />
-                        • Admin will verify your documents
-                        • You'll receive email notification upon approval
-                        • Once approved, you can access the NGO dashboard
-                        • Your NGO will appear on the distribution network map
-                        <br /><br />
-                        <strong>Expected Review Time:</strong> 24-48 hours
+                <div style={{
+                    ...styles.message,
+                    ...styles.success,
+                    textAlign: 'center',
+                    padding: '3rem 2rem'
+                }}>
+                    <div style={{fontSize: '4rem', marginBottom: '1rem'}}>🎉</div>
+                    <h3 style={{color: '#10b981', margin: '0 0 1rem 0', fontSize: '1.5rem'}}>
+                        Registration Complete!
+                    </h3>
+                    <p style={{margin: '0 0 1.5rem 0', lineHeight: '1.6'}}>
+                        Your NGO account has been successfully created and is now under review by our admin team. 
+                        You'll receive an email notification once your account is approved.
+                    </p>
+                    <div style={{
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        borderRadius: '8px',
+                        padding: '1rem',
+                        margin: '1.5rem 0'
+                    }}>
+                        <p style={{margin: '0', fontSize: '0.9rem', color: '#10b981'}}>
+                            <strong>⏱️ Review Process:</strong> Typically takes 24-48 hours<br/>
+                            <strong>📧 Notification:</strong> You'll receive an email when approved
+                        </p>
                     </div>
-                    <button style={styles.button} onClick={() => navigate('/')}>
-                        Go to Home
-                    </button>
-                </>
+                </div>
+                <button 
+                    style={styles.button} 
+                    onClick={() => navigate('/')}
+                    onMouseEnter={(e) => handleButtonHover(e, true)}
+                    onMouseLeave={(e) => handleButtonHover(e, false)}
+                >
+                    🏠 Return to Homepage
+                </button>
+            </>
             );
         }
     };
 
     return (
-        <div style={styles.page}>
+                <div style={styles.page}>
+            <div style={styles.backgroundPattern}></div>
             <div style={styles.container}>
-                <h2 style={{ marginBottom: '1.5rem', textAlign: 'center', color: '#333' }}>
-                    NGO Registration - Step {step} of 5
-                </h2>
+                <h2 style={styles.formTitle}>NGO Registration</h2>
                 
-                {/* Step Progress Indicator */}
-                <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    marginBottom: '2rem',
-                    alignItems: 'center'
-                }}>
-                    {[1, 2, 3, 4, 5].map((stepNum) => (
-                        <React.Fragment key={stepNum}>
-                            <div style={{
-                                width: '30px',
-                                height: '30px',
-                                borderRadius: '50%',
-                                backgroundColor: step >= stepNum ? '#28a745' : '#ccc',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#fff',
-                                fontWeight: 'bold',
-                                fontSize: '0.9rem'
-                            }}>
-                                {stepNum}
-                            </div>
-                            {stepNum < 5 && (
-                                <div style={{
-                                    width: '40px',
-                                    height: '2px',
-                                    backgroundColor: step > stepNum ? '#28a745' : '#ccc',
-                                    margin: '0 5px'
-                                }} />
-                            )}
-                        </React.Fragment>
-                    ))}
+                {/* Step Indicator (4 steps) */}
+                <div style={styles.stepIndicator}>
+                    <span style={{ ...styles.stepDot, ...(step >= 1 ? styles.stepComplete : {}) }}>1</span>
+                    <span style={{ ...styles.stepLine, ...(step >= 2 ? styles.stepLineComplete : {}) }}></span>
+                    <span style={{ ...styles.stepDot, ...(step >= 2 ? styles.stepComplete : {}) }}>2</span>
+                    <span style={{ ...styles.stepLine, ...(step >= 3 ? styles.stepLineComplete : {}) }}></span>
+                    <span style={{ ...styles.stepDot, ...(step >= 3 ? styles.stepComplete : {}) }}>3</span>
+                    <span style={{ ...styles.stepLine, ...(step >= 4 ? styles.stepLineComplete : {}) }}></span>
+                    <span style={{ ...styles.stepDot, ...(step >= 4 ? styles.stepComplete : {}) }}>4</span>
+                    <span style={{ ...styles.stepLine, ...(step >= 5 ? styles.stepLineComplete : {}) }}></span>
+                    <span style={{ ...styles.stepDot, ...(step >= 5 ? styles.stepComplete : {}) }}>5</span>
                 </div>
-
+                
                 <form onSubmit={handleNext}>
                     {renderStep()}
                 </form>
-                
                 {message.text && (
-                    <div style={{ 
-                        ...styles.message, 
-                        ...(message.type === 'success' ? styles.success : styles.error) 
-                    }}>
-                        {message.text}
-                    </div>
+                    <div style={{ ...styles.message, ...(message.type === 'success' ? styles.success : styles.error) }}>{message.text}</div>
                 )}
             </div>
         </div>

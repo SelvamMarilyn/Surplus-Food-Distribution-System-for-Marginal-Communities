@@ -41,10 +41,46 @@ exports.registerDonor = async (req, res) => {
         await donorModel.saveOtp(newDonorId, otp);
 
         await transporter.sendMail({
-            from: `"Surplus Food" <${process.env.EMAIL_USER}>`,
+            from: `"HopeBites Platform" <${process.env.EMAIL_USER}>`,
             to: email,
-            subject: 'Your One-Time Password (OTP) for Registration',
-            html: `<p>Hello ${name},</p><p>Your one-time password (OTP) is: <strong>${otp}</strong>. This OTP is valid for 15 minutes.</p>`
+            subject: 'Welcome to HopeBites - Email Verification Required',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+                    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
+                        <h1 style="color: white; margin: 0; font-size: 28px;">HopeBites</h1>
+                        <p style="color: white; margin: 10px 0 0 0; font-size: 16px;">Food Distribution Platform</p>
+                    </div>
+                    
+                    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h2 style="color: #333; margin-bottom: 20px;">Welcome to HopeBites, ${name}!</h2>
+                        
+                        <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+                            Thank you for joining our mission to reduce food waste and help communities in need. To complete your registration, please verify your email address using the code below.
+                        </p>
+                        
+                        <div style="background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                            <p style="color: #333; margin: 0; font-size: 14px; font-weight: 500;">Your verification code is:</p>
+                            <h1 style="color: #ff6b6b; margin: 10px 0; font-size: 32px; letter-spacing: 3px;">${otp}</h1>
+                            <p style="color: #666; margin: 0; font-size: 12px;">Valid for 15 minutes</p>
+                        </div>
+                        
+                        <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+                            Enter this code in the verification field to complete your account setup. If you didn't create an account with HopeBites, please ignore this email.
+                        </p>
+                        
+                        <div style="text-align: center; margin-top: 30px;">
+                            <p style="color: #999; font-size: 14px; margin: 0;">
+                                Best regards,<br>
+                                <strong>The HopeBites Team</strong>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
+                        <p>This is an automated message. Please do not reply to this email.</p>
+                    </div>
+                </div>
+            `
         });
 
         res.status(200).json({ message: 'Registration successful. An OTP has been sent to your email.' });

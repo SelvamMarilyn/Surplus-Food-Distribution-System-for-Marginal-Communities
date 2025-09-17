@@ -3,744 +3,1058 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 /**
- * The main AdminPanel component that renders a professional dashboard
- * to manage donor applications and view analytics.
+ * Professional Admin Panel with modern design and interactive features
  */
 export default function AdminPanel() {
-    // State to hold the list of donors fetched from the backend.
     const [donors, setDonors] = useState([]);
-    // State to manage the loading status of the data.
     const [loading, setLoading] = useState(true);
-    // State to display user feedback messages.
     const [message, setMessage] = useState({ text: "", type: "" });
-    // State to manage the active view in the dashboard (e.g., approvals, reports).
-    const [activeView, setActiveView] = useState("donorApprovals");
-    const [ngos, setNgos] = useState([]); 
-    // React Router hook for programmatic navigation.
+    const [activeView, setActiveView] = useState("dashboard");
+    const [ngos, setNgos] = useState([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filterStatus, setFilterStatus] = useState("all");
     const navigate = useNavigate();
 
-    // Base URL for the backend server to construct correct file paths.
     const BACKEND_URL = "http://localhost:5000";
 
-    // Menu items for the sidebar.
+    // Enhanced menu items with icons and descriptions
     const sidebarMenu = [
-        { key: "donorApprovals", label: "Donor Approvals" },
-        { key: "allDonors", label: "All Donors" },
-        { key: "ngoApprovals", label: "NGO Approvals" },
-        { key: "allNgos", label: "All NGOs" },
-        { key: "reports", label: "Reports & Analytics" },
+        { 
+            key: "dashboard", 
+            label: "Dashboard", 
+            icon: "📊",
+            description: "Overview & Statistics"
+        },
+        { 
+            key: "donorApprovals", 
+            label: "Donor Approvals", 
+            icon: "✅",
+            description: "Pending Donor Reviews"
+        },
+        { 
+            key: "allDonors", 
+            label: "All Donors", 
+            icon: "🍽️",
+            description: "Manage All Donors"
+        },
+        { 
+            key: "ngoApprovals", 
+            label: "NGO Approvals", 
+            icon: "🏢",
+            description: "Pending NGO Reviews"
+        },
+        { 
+            key: "allNgos", 
+            label: "All NGOs", 
+            icon: "🤝",
+            description: "Manage All NGOs"
+        },
+        { 
+            key: "reports", 
+            label: "Analytics", 
+            icon: "📈",
+            description: "Reports & Insights"
+        },
     ];
 
     /**
-     * Styles object for all CSS-in-JS styling, providing a cohesive and professional look.
+     * Enhanced professional styles with modern design patterns
      */
     const styles = {
         dashboard: {
             display: 'flex',
             minHeight: '100vh',
-            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-            backgroundColor: '#f8f9fa',
+            fontFamily: "'Cormorant Garamond', serif",
+            backgroundColor: '#121212',
+            color: '#f7fafc',
         },
         sidebar: {
-            width: '240px',
-            backgroundColor: '#2c3e50',
-            color: '#ecf0f1',
-            padding: '2rem 1.5rem',
+            width: '280px',
+            background: 'linear-gradient(180deg, #ff6b6b 0%, #ee5a24 100%)',
+            color: '#fff',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '2px 0 10px rgba(0,0,0,0.1)',
+            boxShadow: '4px 0 20px rgba(0,0,0,0.3)',
+            position: 'relative',
+            overflow: 'hidden',
+        },
+        sidebarHeader: {
+            fontFamily: "'Great Vibes', cursive",
+            padding: '2rem 1.5rem',
+            borderBottom: '1px solid rgba(255,255,255,0.1)',
+            textAlign: 'center',
+        },
+        logoContainer: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.75rem',
+            marginBottom: '0.5rem',
+        },
+        logo: {
+            width: '40px',
+            height: '40px',
+            background: 'rgba(255,255,255,0.2)',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '2.5rem',
+            backdropFilter: 'blur(10px)',
         },
         sidebarTitle: {
+            fontSize: '2rem',
+            fontWeight: '700',
+            margin: '0',
+        },
+        sidebarSubtitle: {
             fontSize: '1.5rem',
-            fontWeight: 'bold',
-            marginBottom: '2rem',
-            textAlign: 'center',
-            color: '#fff',
+            opacity: '0.8',
+            margin: '0',
+            fontWeight: '400',
+        },
+        navigation: {
+            flex: '1',
+            padding: '1rem 0',
+            overflowY: 'auto',
         },
         navItem: {
-            padding: '0.75rem 1rem',
-            marginBottom: '0.5rem',
-            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0.75rem 1.5rem',
+            margin: '0.25rem 1rem',
+            borderRadius: '12px',
             cursor: 'pointer',
-            transition: 'background-color 0.2s, color 0.2s',
-            fontWeight: '500',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            position: 'relative',
+            overflow: 'hidden',
+            textDecoration: 'none',
+            color: 'inherit',
+        },
+        navItemContent: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            flex: '1',
+            zIndex: '2',
+            position: 'relative',
+        },
+        navIcon: {
+            fontSize: '1.9rem',
+            minWidth: '24px',
+            textAlign: 'center',
+        },
+        navText: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.125rem',
+        },
+        navLabel: {
+            fontSize: '1.2rem',
+            fontWeight: '600',
+            lineHeight: '1.2',
+        },
+        navDescription: {
+            fontSize: '0.85rem',
+            opacity: '0.8',
+            fontWeight: '400',
         },
         navItemHover: {
-            backgroundColor: '#34495e',
-            color: '#fff',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            transform: 'translateX(4px)',
         },
         navActive: {
-            backgroundColor: '#3498db',
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            transform: 'translateX(4px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        },
+        navActiveIndicator: {
+            position: 'absolute',
+            left: '0',
+            top: '0',
+            bottom: '0',
+            width: '3px',
+            background: '#fff',
+            borderRadius: '0 2px 2px 0',
+        },
+        sidebarFooter: {
+            padding: '1.5rem',
+            borderTop: '1px solid rgba(255,255,255,0.1)',
+        },
+        logoutButton: {
+            width: '100%',
+            padding: '0.75rem 1rem',
+            background: 'rgba(255,255,255,0.1)',
             color: '#fff',
-            boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)',
+            border: '2px solid rgba(255,255,255,0.2)',
+            borderRadius: '12px',
+            fontSize: '1rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            backdropFilter: 'blur(10px)',
+        },
+        logoutButtonHover: {
+            background: 'rgba(229, 62, 62, 0.2)',
+            borderColor: 'rgba(229, 62, 62, 0.3)',
+            transform: 'translateY(-1px)',
         },
         mainContent: {
             flexGrow: '1',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+        },
+        topBar: {
+            background: 'rgba(15, 15, 15, 0.9)',
+            backdropFilter: 'blur(10px)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            padding: '1rem 2rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+        },
+        breadcrumb: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            color: '#e2e8f0',
+            fontSize: '2rem',
+            fontFamily: "'Great Vibes', cursive",
+        },
+        pageTitle: {
+            fontSize: '1.75rem',
+            fontWeight: '700',
+            color: '#feca57',
+            margin: '0',
+        },
+        searchContainer: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+        },
+        searchInput: {
+            padding: '0.5rem 1rem',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '8px',
+            fontSize: '1rem',
+            minWidth: '250px',
+            transition: 'all 0.3s ease',
+            background: 'rgba(255, 255, 255, 0.1)',
+            color: '#f7fafc',
+        },
+        searchInputFocus: {
+            borderColor: '#feca57',
+            outline: 'none',
+            boxShadow: '0 0 0 3px rgba(254, 202, 87, 0.1)',
+        },
+        filterSelect: {
+            padding: '0.5rem 1rem',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '8px',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            background: 'rgba(255, 255, 255, 0.1)',
+            color: '#f7fafc',
+        },
+        contentArea: {
+            flex: '1',
             padding: '2rem',
             overflowY: 'auto',
+            background: '#121212',
         },
-        contentTitle: {
-            fontSize: '2.5rem',
-            fontWeight: 'bold',
-            color: '#34495e',
-            marginBottom: '1.5rem',
+        statsGrid: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '1.5rem',
+            marginBottom: '2rem',
         },
-        messageBox: {
-            padding: '1rem',
-            borderRadius: '8px',
-            marginBottom: '1.5rem',
+        statCard: {
+            background: '#262424',
+            borderRadius: '16px',
+            padding: '1.5rem',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            overflow: 'hidden',
+        },
+        statCardHover: {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+        },
+        statIcon: {
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.5rem',
+            marginBottom: '1rem',
+        },
+        statValue: {
+            fontSize: '2rem',
+            fontWeight: '700',
+            margin: '0 0 0.25rem 0',
+            color: '#feca57',
+        },
+        statLabel: {
+            fontSize: '1rem',
+            color: '#e2e8f0',
+            margin: '0',
+            fontWeight: '500',
+        },
+        statTrend: {
+            position: 'absolute',
+            top: '1rem',
+            right: '1rem',
+            fontSize: '1rem',
             fontWeight: '600',
-            textAlign: 'center',
+            padding: '0.25rem 0.5rem',
+            borderRadius: '12px',
         },
-        messageSuccess: {
-            backgroundColor: '#d4edda',
-            color: '#155724',
+        trendPositive: {
+            background: 'rgba(34, 197, 94, 0.1)',
+            color: '#16a34a',
         },
-        messageError: {
-            backgroundColor: '#f8d7da',
-            color: '#721c24',
+        trendNeutral: {
+            background: 'rgba(156, 163, 175, 0.1)',
+            color: '#6b7280',
+        },
+        card: {
+            background: '#262424',
+            borderRadius: '16px',
+            padding: '1.5rem',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+        },
+        cardHeader: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '1.5rem',
+            paddingBottom: '1rem',
+            borderBottom: '1px solid #f1f5f9',
+        },
+        cardTitle: {
+            fontSize: '1.25rem',
+            fontWeight: '700',
+            color: '#feca57',
+            margin: '0',
         },
         tableContainer: {
             overflowX: 'auto',
+            borderRadius: '12px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
         },
         table: {
             width: '100%',
             borderCollapse: 'collapse',
-            backgroundColor: '#fff',
-            borderRadius: '10px',
-            boxShadow: '0 5px 15px rgba(0,0,0,0.08)',
+            background: '#262424',
+        },
+        tableHeader: {
+            background: 'rgba(255, 107, 107, 0.1)',
+            borderBottom: '2px solid rgba(255, 255, 255, 0.1)',
         },
         th: {
-            textAlign: 'left',
             padding: '1rem 1.5rem',
-            backgroundColor: '#ecf0f1',
-            color: '#7f8c8d',
+            textAlign: 'left',
+            fontSize: '0.85rem',
+            fontWeight: '700',
+            color: '#feca57',
             textTransform: 'uppercase',
-            fontSize: '0.75rem',
-            fontWeight: 'bold',
             letterSpacing: '0.05em',
         },
         td: {
             padding: '1rem 1.5rem',
-            borderBottom: '1px solid #e0e6ed',
-            color: '#34495e',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
             fontSize: '0.9rem',
+            color: '#e2e8f0',
         },
-        actionButtonContainer: {
-            display: 'flex',
-            gap: '0.5rem',
+        tableRow: {
+            transition: 'all 0.2s ease',
+        },
+        tableRowHover: {
+            backgroundColor: 'rgba(255, 107, 107, 0.05)',
+        },
+        badge: {
+            padding: '0.25rem 0.75rem',
+            borderRadius: '12px',
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            textTransform: 'uppercase',
+            letterSpacing: '0.025em',
+        },
+        badgeApproved: {
+            background: 'rgba(34, 197, 94, 0.1)',
+            color: '#16a34a',
+        },
+        badgeRejected: {
+            background: 'rgba(239, 68, 68, 0.1)',
+            color: '#dc2626',
+        },
+        badgePending: {
+            background: 'rgba(245, 158, 11, 0.1)',
+            color: '#d97706',
+        },
+        badgeBlocked: {
+            background: 'rgba(156, 163, 175, 0.1)',
+            color: '#6b7280',
         },
         actionButton: {
             padding: '0.5rem 1rem',
-            borderRadius: '999px',
-            border: 'none',
-            color: '#fff',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'background-color 0.2s, box-shadow 0.2s',
-            fontSize: '0.8rem',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        },
-        approveButton: {
-            backgroundColor: '#2ecc71',
-        },
-        approveButtonHover: {
-            backgroundColor: '#27ae60',
-        },
-        rejectButton: {
-            backgroundColor: '#e74c3c',
-        },
-        rejectButtonHover: {
-            backgroundColor: '#c0392b',
-        },
-        btn: {
-            padding: '0.75rem 1.5rem',
             borderRadius: '8px',
             border: 'none',
-            color: '#fff',
-            fontWeight: 'bold',
+            fontSize: '0.8rem',
+            fontWeight: '600',
             cursor: 'pointer',
-            transition: 'background-color 0.2s',
-            boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+            transition: 'all 0.2s ease',
+            marginRight: '0.5rem',
         },
-        statusBadge: {
-            padding: '0.25rem 0.75rem',
-            borderRadius: '999px',
-            fontSize: '0.75rem',
-            fontWeight: 'bold',
+        approveButton: {
+            background: '#16a34a',
+            color: '#fff',
         },
-        statusApproved: {
-            backgroundColor: '#d4edda',
-            color: '#155724',
+        rejectButton: {
+            background: '#dc2626',
+            color: '#fff',
         },
-        statusRejected: {
-            backgroundColor: '#f8d7da',
-            color: '#721c24',
+        blockButton: {
+            background: '#f59e0b',
+            color: '#fff',
         },
-        statusPending: {
-            backgroundColor: '#fff3cd',
-            color: '#856404',
+        deleteButton: {
+            background: '#ef4444',
+            color: '#fff',
+        },
+        unblockButton: {
+            background: '#10b981',
+            color: '#fff',
+        },
+        viewButton: {
+            background: '#3b82f6',
+            color: '#fff',
+        },
+        messageAlert: {
+            padding: '1rem 1.5rem',
+            borderRadius: '12px',
+            marginBottom: '1.5rem',
+            fontSize: '0.9rem',
+            fontWeight: '500',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+        },
+        messageSuccess: {
+            background: 'rgba(34, 197, 94, 0.1)',
+            color: '#16a34a',
+            border: '1px solid rgba(34, 197, 94, 0.2)',
+        },
+        messageError: {
+            background: 'rgba(239, 68, 68, 0.1)',
+            color: '#dc2626',
+            border: '1px solid rgba(239, 68, 68, 0.2)',
+        },
+        loadingContainer: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '3rem',
+            color: '#64748b',
+        },
+        loadingSpinner: {
+            width: '32px',
+            height: '32px',
+            border: '3px solid #e2e8f0',
+            borderTop: '3px solid #667eea',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            marginRight: '1rem',
+        },
+        emptyState: {
+            textAlign: 'center',
+            padding: '3rem',
+            color: '#e2e8f0',
+        },
+        emptyStateIcon: {
+            fontSize: '3rem',
+            marginBottom: '1rem',
+            opacity: '0.5',
+        },
+        emptyStateText: {
+            fontSize: '1.1rem',
+            fontWeight: '500',
+            color: '#feca57',
         },
     };
 
-    /**
-     * Fetches donors from the backend based on the active view.
-     */
+    // Add keyframes for loading spinner
+    const spinKeyframes = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+
     const fetchDonors = async () => {
         try {
             setLoading(true);
-            const endpoint =
-                activeView === "allDonors"
-                    ? `${BACKEND_URL}/api/admin/all-donors`
-                    : `${BACKEND_URL}/api/admin/donors`;
+            const endpoint = activeView === "allDonors" 
+                ? `${BACKEND_URL}/api/admin/all-donors`
+                : `${BACKEND_URL}/api/admin/donors`;
             const res = await axios.get(endpoint);
             setDonors(res.data);
-            setLoading(false);
         } catch (error) {
             setMessage({ text: "Failed to retrieve donors.", type: "error" });
+        } finally {
             setLoading(false);
         }
     };
 
-    /**
-     * Effect hook to fetch donors whenever the active view changes.
-     */
+    const fetchNgos = async () => {
+        try {
+            const res = await axios.get(`${BACKEND_URL}/api/admin/ngos`);
+            setNgos(res.data);
+        } catch (err) {
+            setMessage({ text: "Failed to fetch NGOs", type: "error" });
+        }
+    };
+
     useEffect(() => {
         const isAuthenticated = localStorage.getItem("isAuthenticated");
         if (!isAuthenticated) {
             navigate("/admin-login");
         } else {
+            // Always fetch data when component mounts or view changes
             fetchDonors();
-            if (activeView === "ngoApprovals" || activeView === "allNgos") {
-                fetchNgos();
-            }
+            fetchNgos();
         }
     }, [activeView, navigate]);
 
-    /**
-     * Handles the action to approve or reject a donor.
-     * @param {string} id - The ID of the donor to act on.
-     * @param {string} action - The action to perform ('approve' or 'reject').
-     */
-  const handleAction = async (id, action) => {
-    try {
-        let url, method;
+    const handleAction = async (id, action) => {
+        try {
+            let url, method;
+            if (action === "delete") {
+                url = `${BACKEND_URL}/api/admin/delete-donor/${id}`;
+                method = "delete";
+            } else if (action === "block") {
+                url = `${BACKEND_URL}/api/admin/block-donor/${id}`;
+                method = "post";
+            } else if (action === "unblock") {
+                url = `${BACKEND_URL}/api/admin/unblock-donor/${id}`;
+                method = "post";
+            } else {
+                url = `${BACKEND_URL}/api/admin/${action}-donor/${id}`;
+                method = "post";
+            }
 
-        if (action === "delete") {
-        url = `${BACKEND_URL}/api/admin/delete-donor/${id}`;
-        method = "delete";
-        } else if (action === "block") {
-        url = `${BACKEND_URL}/api/admin/block-donor/${id}`;
-        method = "post";
-        } else if (action === "unblock") {
-        url = `${BACKEND_URL}/api/admin/unblock-donor/${id}`;
-        method = "post";
-        }else {
-        url = `${BACKEND_URL}/api/admin/${action}-donor/${id}`;
-        method = "post";
+            const res = await axios({ method, url });
+            setMessage({ text: res.data.message, type: "success" });
+            fetchDonors();
+        } catch (error) {
+            setMessage({
+                text: error.response?.data?.message || `Failed to ${action} donor.`,
+                type: "error",
+            });
         }
+    };
 
-        const res = await axios({ method, url });
-        setMessage({ text: res.data.message, type: "success" });
-        fetchDonors();
-    } catch (error) {
-        console.error(`Failed to ${action} donor:`, error);
-        setMessage({
-        text: error.response?.data?.message || `Failed to ${action} donor.`,
-        type: "error",
-        });
-    }
-    };
-    const fetchNgos = async () => {
-    try {
-        const res = await axios.get(`${BACKEND_URL}/api/admin/ngos`);
-        setNgos(res.data); // you'll need a new state: const [ngos,setNgos]=useState([]);
-    } catch (err) { console.error("Failed to fetch NGOs:", err);
-    setMessage({
-      text: "Failed to fetch NGOs",
-      type: "error",
-    }); }
-    };
     const handleNgoAction = async (id, action) => {
-    try {
-        let url = `${BACKEND_URL}/api/admin/${action}-ngo/${id}`;
-        let method = (action === 'delete') ? 'delete' : 'post';
-        const res = await axios({ method, url });
-        setMessage({ text: res.data.message, type: 'success' });
-        fetchNgos();
-    } catch (err) {
-        setMessage({ text: err.response?.data?.message || 'Failed', type: 'error' });
-    }
+        try {
+            let url = `${BACKEND_URL}/api/admin/${action}-ngo/${id}`;
+            let method = (action === 'delete') ? 'delete' : 'post';
+            const res = await axios({ method, url });
+            setMessage({ text: res.data.message, type: 'success' });
+            fetchNgos();
+        } catch (err) {
+            setMessage({ text: err.response?.data?.message || 'Failed', type: 'error' });
+        }
     };
 
-
-    /**
-     * Logs the user out by removing the authentication token and navigating to the login page.
-     */
     const handleLogout = () => {
         localStorage.removeItem("isAuthenticated");
-        navigate("/admin-login");
+        navigate("/");
     };
 
-    /**
-     * Renders the content for the currently active view.
-     */
+    const getStats = () => {
+        return {
+            totalDonors: donors.length,
+            approvedDonors: donors.filter(d => d.status === 'Approved').length,
+            pendingDonors: donors.filter(d => d.status === 'Under Review').length,
+            totalNgos: ngos.length,
+            approvedNgos: ngos.filter(n => n.status === 'Approved').length,
+            pendingNgos: ngos.filter(n => n.status === 'Under Review').length,
+        };
+    };
+
+    const renderDashboard = () => {
+        const stats = getStats();
+        return (
+            <div>
+                <div style={styles.statsGrid}>
+                    <div style={styles.statCard}>
+                        <div style={{...styles.statIcon, background: 'rgba(59, 130, 246, 0.1)'}}>
+                            🍽️
+                        </div>
+                        <div style={styles.statValue}>{stats.totalDonors}</div>
+                        <div style={styles.statLabel}>Total Donors</div>
+                        <div style={{...styles.statTrend, ...styles.trendPositive}}>
+                            +12%
+                        </div>
+                    </div>
+                    
+                    <div style={styles.statCard}>
+                        <div style={{...styles.statIcon, background: 'rgba(34, 197, 94, 0.1)'}}>
+                            ✅
+                        </div>
+                        <div style={styles.statValue}>{stats.approvedDonors}</div>
+                        <div style={styles.statLabel}>Approved Donors</div>
+                        <div style={{...styles.statTrend, ...styles.trendPositive}}>
+                            +8%
+                        </div>
+                    </div>
+
+                    <div style={styles.statCard}>
+                        <div style={{...styles.statIcon, background: 'rgba(245, 158, 11, 0.1)'}}>
+                            ⏳
+                        </div>
+                        <div style={styles.statValue}>{stats.pendingDonors}</div>
+                        <div style={styles.statLabel}>Pending Reviews</div>
+                        <div style={{...styles.statTrend, ...styles.trendNeutral}}>
+                            {stats.pendingDonors > 0 ? 'Action Needed' : 'All Clear'}
+                        </div>
+                    </div>
+
+                    <div style={styles.statCard}>
+                        <div style={{...styles.statIcon, background: 'rgba(168, 85, 247, 0.1)'}}>
+                            🤝
+                        </div>
+                        <div style={styles.statValue}>{stats.totalNgos}</div>
+                        <div style={styles.statLabel}>Total NGOs</div>
+                        <div style={{...styles.statTrend, ...styles.trendPositive}}>
+                            +5%
+                        </div>
+                    </div>
+                </div>
+
+                <div style={styles.card}>
+                    <div style={styles.cardHeader}>
+                        <h3 style={styles.cardTitle}>Quick Actions</h3>
+                    </div>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
+                        <button 
+                            style={{...styles.actionButton, ...styles.viewButton, padding: '1rem'}}
+                            onClick={() => setActiveView('donorApprovals')}
+                        >
+                            📋 Review Donors ({stats.pendingDonors})
+                        </button>
+                        <button 
+                            style={{...styles.actionButton, ...styles.viewButton, padding: '1rem'}}
+                            onClick={() => setActiveView('ngoApprovals')}
+                        >
+                            🏢 Review NGOs ({stats.pendingNgos})
+                        </button>
+                        <button 
+                            style={{...styles.actionButton, ...styles.viewButton, padding: '1rem'}}
+                            onClick={() => setActiveView('reports')}
+                        >
+                            📊 View Analytics
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderTable = (data, type) => {
+        const filteredData = data.filter(item => {
+            const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                item.email.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesFilter = filterStatus === 'all' || item.status.toLowerCase() === filterStatus.toLowerCase();
+            return matchesSearch && matchesFilter;
+        });
+
+        return (
+            <div style={styles.tableContainer}>
+                <table style={styles.table}>
+                    <thead style={styles.tableHeader}>
+                        <tr>
+                            <th style={styles.th}>ID</th>
+                            <th style={styles.th}>Name</th>
+                            <th style={styles.th}>Email</th>
+                            <th style={styles.th}>Phone</th>
+                            <th style={styles.th}>Address</th>
+                            {type === 'donor' ? (
+                                <>
+                                    <th style={styles.th}>Restaurant</th>
+                                    <th style={styles.th}>Branch</th>
+                                    <th style={styles.th}>Food Type</th>
+                                </>
+                            ) : (
+                                <th style={styles.th}>Registration #</th>
+                            )}
+                            <th style={styles.th}>Status</th>
+                            <th style={styles.th}>Created</th>
+                            <th style={styles.th}>Document</th>
+                            <th style={styles.th}>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredData.map((item) => (
+                            <tr key={item.id} style={styles.tableRow}>
+                                <td style={styles.td}>{item.id}</td>
+                                <td style={styles.td}>{item.name}</td>
+                                <td style={styles.td}>{item.email}</td>
+                                <td style={styles.td}>{item.phone || '-'}</td>
+                                <td style={styles.td}>{item.address ? (item.address.length > 30 ? item.address.substring(0, 30) + '...' : item.address) : '-'}</td>
+                                {type === 'donor' ? (
+                                    <>
+                                        <td style={styles.td}>{item.restaurant_name || '-'}</td>
+                                        <td style={styles.td}>{item.branch_name || '-'}</td>
+                                        <td style={styles.td}>{item.food_type || '-'}</td>
+                                    </>
+                                ) : (
+                                    <td style={styles.td}>{item.registration_number || '-'}</td>
+                                )}
+                                <td style={styles.td}>
+                                    <span style={{
+                                        ...styles.badge,
+                                        ...(item.status === 'Approved' ? styles.badgeApproved :
+                                            item.status === 'Rejected' ? styles.badgeRejected :
+                                            item.status === 'Blocked' ? styles.badgeBlocked :
+                                            styles.badgePending)
+                                    }}>
+                                        {item.status}
+                                    </span>
+                                </td>
+                                <td style={styles.td}>{item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}</td>
+                                <td style={styles.td}>
+                                    {item.document_path ? (
+                                        <a
+                                            href={`${BACKEND_URL}/uploads/${type === 'ngo' ? 'ngo_docs/' : ''}${item.document_path}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{color: '#3b82f6', textDecoration: 'none', fontWeight: '500'}}
+                                        >
+                                            📄 View
+                                        </a>
+                                    ) : (
+                                        <span style={{color: '#9ca3af'}}>No document</span>
+                                    )}
+                                </td>
+                                <td style={styles.td}>
+                                    {item.status === 'Under Review' ? (
+                                        <div>
+                                            <button
+                                                style={{...styles.actionButton, ...styles.approveButton}}
+                                                onClick={() => type === 'ngo' ? handleNgoAction(item.id, 'approve') : handleAction(item.id, 'approve')}
+                                            >
+                                                Approve
+                                            </button>
+                                            <button
+                                                style={{...styles.actionButton, ...styles.rejectButton}}
+                                                onClick={() => type === 'ngo' ? handleNgoAction(item.id, 'reject') : handleAction(item.id, 'reject')}
+                                            >
+                                                Reject
+                                            </button>
+                                        </div>
+                                    ) : item.status === 'Approved' ? (
+                                        <div>
+                                            <button
+                                                style={{...styles.actionButton, ...styles.blockButton}}
+                                                onClick={() => type === 'ngo' ? handleNgoAction(item.id, 'block') : handleAction(item.id, 'block')}
+                                            >
+                                                Block
+                                            </button>
+                                            <button
+                                                style={{...styles.actionButton, ...styles.deleteButton}}
+                                                onClick={() => type === 'ngo' ? handleNgoAction(item.id, 'delete') : handleAction(item.id, 'delete')}
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    ) : item.status === 'Blocked' ? (
+                                        <button
+                                            style={{...styles.actionButton, ...styles.unblockButton}}
+                                            onClick={() => type === 'ngo' ? handleNgoAction(item.id, 'unblock') : handleAction(item.id, 'unblock')}
+                                        >
+                                            Unblock
+                                        </button>
+                                    ) : (
+                                        <span style={{color: '#6b7280'}}>No actions</span>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
+
     const renderContent = () => {
         if (loading) {
-            return <div style={{ textAlign: 'center', padding: '2rem', color: '#7f8c8d' }}>Loading...</div>;
+            return (
+                <div style={styles.loadingContainer}>
+                    <div style={styles.loadingSpinner}></div>
+                    <span>Loading...</span>
+                </div>
+            );
         }
 
         switch (activeView) {
+            case "dashboard":
+                return renderDashboard();
             case "donorApprovals":
-                const pendingDonors = donors.filter((d) => d.status === "Under Review");
-                return (
-                    <div style={styles.tableContainer}>
-                        <table style={styles.table}>
-                            <thead style={styles.thead}>
-                                <tr>
-                                    <th style={styles.th}>ID</th>
-                                    <th style={styles.th}>Name</th>
-                                    <th style={styles.th}>Email</th>
-                                    {/* <th style={styles.th}>Documents</th> */}
-                                    <th style={styles.th}>Restaurant</th>
-                                    <th style={styles.th}>Branch</th>
-                                    <th style={styles.th}>Address</th>
-                                    <th style={styles.th}>Phone</th>
-                                    <th style={styles.th}>Opening Hours</th>
-                                    <th style={styles.th}>Food Type</th>
-                                    <th style={styles.th}>Description</th>
-                                    <th style={styles.th}>Email Verified</th>
-                                    <th style={styles.th}>Document</th>
-                                    <th style={styles.th}>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {pendingDonors.length > 0 ? (
-                                    pendingDonors.map((donor) => (
-                                        <tr key={donor.id} style={{ transition: 'background-color 0.15s' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}>
-                                            <td style={styles.td}>{donor.id}</td>
-                                            <td style={styles.td}>{donor.name}</td>
-                                            <td style={styles.td}>{donor.email}</td>
-                                            <td style={styles.td}>{donor.restaurant_name || "N/A"}</td>
-                                            <td style={styles.td}>{donor.branch_name || "N/A"}</td>
-                                            <td style={styles.td}>{donor.address || "N/A"}</td>
-                                            <td style={styles.td}>{donor.phone || "N/A"}</td>
-                                            <td style={styles.td}>{donor.opening_hours || "N/A"}</td>
-                                            <td style={styles.td}>{donor.food_type || "N/A"}</td>
-                                            <td style={styles.td}>{donor.description || "N/A"}</td>
-                                            <td style={styles.td}>{donor.is_email_verified ? "Yes" : "No"}</td>
-                                            <td style={styles.td}>
-                                                {donor.document_path ? (
-                                                    <a
-                                                        href={`${BACKEND_URL}/uploads/${donor.document_path}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{ color: '#3498db', fontWeight: 'bold', textDecoration: 'none' }}
-                                                    >
-                                                        View Document
-                                                    </a>
-                                                ) : (
-                                                    <span style={{ color: '#999' }}>No document</span>
-                                                )}
-                                            </td>
-                                            <td style={styles.td}>
-                                                <div style={styles.actionButtonContainer}>
-                                                    <button
-                                                        onClick={() => handleAction(donor.id, 'approve')}
-                                                        style={styles.approveButton}
-                                                        onMouseOver={(e) => Object.assign(e.currentTarget.style, styles.approveButtonHover)}
-                                                        onMouseOut={(e) => Object.assign(e.currentTarget.style, styles.approveButton)}
-                                                    >
-                                                        Approve
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleAction(donor.id, 'reject')}
-                                                        style={styles.rejectButton}
-                                                        onMouseOver={(e) => Object.assign(e.currentTarget.style, styles.rejectButtonHover)}
-                                                        onMouseOut={(e) => Object.assign(e.currentTarget.style, styles.rejectButton)}
-                                                    >
-                                                        Reject
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: '#7f8c8d' }}>No pending donor applications.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                const pendingDonors = donors.filter(d => d.status === "Under Review");
+                return pendingDonors.length > 0 ? renderTable(pendingDonors, 'donor') : (
+                    <div style={styles.emptyState}>
+                        <div style={styles.emptyStateIcon}>✅</div>
+                        <div style={styles.emptyStateText}>No pending donor approvals</div>
                     </div>
                 );
             case "allDonors":
-                return (
-                    <div style={styles.tableContainer}>
-                        <table style={styles.table}>
-                            <thead style={styles.thead}>
-                                <tr>
-                                    <th style={styles.th}>ID</th>
-                                    <th style={styles.th}>Name</th>
-                                    <th style={styles.th}>Email</th>
-                                    <th style={styles.th}>Restaurant</th>
-                                    <th style={styles.th}>Branch</th>
-                                    <th style={styles.th}>Phone</th>
-                                    <th style={styles.th}>Food Type</th>
-                                    <th style={styles.th}>View Document</th>
-                                    <th style={styles.th}>Status</th>
-                                    <th style={styles.th}>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {donors.length > 0 ? (
-                                    donors.map((donor) => (
-                                        <tr key={donor.id} style={{ transition: 'background-color 0.15s' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}>
-                                            <td style={styles.td}>{donor.id}</td>
-                                            <td style={styles.td}>{donor.name}</td>
-                                            <td style={styles.td}>{donor.email}</td>
-                                            <td style={styles.td}>{donor.restaurant_name || "N/A"}</td>
-                                            <td style={styles.td}>{donor.branch_name || "N/A"}</td>
-                                            <td style={styles.td}>{donor.phone || "N/A"}</td>
-                                          <td style={styles.td}>{donor.food_type || "N/A"}</td>
-                                          <td style={styles.td}>
-                                                {donor.document_path ? (
-                                                    <a
-                                                        href={`${BACKEND_URL}/uploads/${donor.document_path}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{ color: '#3498db', fontWeight: 'bold', textDecoration: 'none' }}
-                                                    >
-                                                        View Document
-                                                    </a>
-                                                ) : (
-                                                    <span style={{ color: '#999' }}>No document</span>
-                                                )}
-                                            </td>
-                                            <td style={styles.td}>
-                                                <span style={{
-                                                    ...styles.statusBadge,
-                                                    ...(donor.status === 'Approved' ? styles.statusApproved : donor.status === 'Rejected' ? styles.statusRejected : styles.statusPending)
-                                                }}>
-                                                    {donor.status}
-                                                </span>
-                                            </td>
-                                            <td style={styles.td}>
-                                                {donor.status === "Approved" ? (
-                                                    <div style={{ display: "flex", gap: "0.5rem" }}>
-                                                    <button
-                                                        onClick={() => handleAction(donor.id, "block")}
-                                                        style={{ backgroundColor: "orange", color: "#fff", padding: "0.5rem 1rem", borderRadius: "6px" }}
-                                                    >
-                                                        Block
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleAction(donor.id, "delete")}
-                                                        style={{ backgroundColor: "red", color: "#fff", padding: "0.5rem 1rem", borderRadius: "6px" }}
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                    </div>
-                                                ) : donor.status === "Blocked" ? (
-                                                    <div style={{ display: "flex", gap: "0.5rem" }}>
-                                                    <span style={{ color: "orange", fontWeight: "bold" }}>🚫 Blocked</span>
-                                                    <button
-                                                        onClick={() => handleAction(donor.id, "unblock")}
-                                                        style={{ backgroundColor: "green", color: "#fff", padding: "0.5rem 1rem", borderRadius: "6px" }}
-                                                    >
-                                                        Unblock
-                                                    </button>
-                                                    </div>
-                                                ) : (
-                                                    donor.status
-                                                )}
-                                                </td>
-
-
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="3" style={{ textAlign: 'center', padding: '2rem', color: '#7f8c8d' }}>No donors found.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                return donors.length > 0 ? renderTable(donors, 'donor') : (
+                    <div style={styles.emptyState}>
+                        <div style={styles.emptyStateIcon}>🍽️</div>
+                        <div style={styles.emptyStateText}>No donors found</div>
                     </div>
                 );
             case "ngoApprovals":
-                const pendingNgos = ngos.filter((n) => n.status === "Under Review");
-                return (
-                    <div style={styles.tableContainer}>
-                        <table style={styles.table}>
-                            <thead style={styles.thead}>
-                                <tr>
-                                    <th style={styles.th}>ID</th>
-                                    <th style={styles.th}>Name</th>
-                                    <th style={styles.th}>Email</th>
-                                    <th style={styles.th}>Registration Number</th>
-                                    <th style={styles.th}>Address</th>
-                                    <th style={styles.th}>Phone</th>
-                                    <th style={styles.th}>Email Verified</th>
-                                    <th style={styles.th}>Document</th>
-                                    <th style={styles.th}>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {pendingNgos.length > 0 ? (
-                                    pendingNgos.map((ngo) => (
-                                        <tr key={ngo.id} style={{ transition: 'background-color 0.15s' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}>
-                                            <td style={styles.td}>{ngo.id}</td>
-                                            <td style={styles.td}>{ngo.name}</td>
-                                            <td style={styles.td}>{ngo.email}</td>
-                                            <td style={styles.td}>{ngo.registration_number || "N/A"}</td>
-                                            <td style={styles.td}>{ngo.address || "N/A"}</td>
-                                            <td style={styles.td}>{ngo.phone || "N/A"}</td>
-                                            <td style={styles.td}>{ngo.is_email_verified ? "Yes" : "No"}</td>
-                                            <td style={styles.td}>
-                                                {ngo.document_path ? (
-                                                    <a
-                                                        href={`${BACKEND_URL}/uploads/ngo_docs/${ngo.document_path.replace('/uploads/ngo_docs/','')}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{ color: '#3498db', fontWeight: 'bold', textDecoration: 'none' }}
-                                                    >
-                                                        View Document
-                                                    </a>
-                                                ) : (
-                                                    <span style={{ color: '#999' }}>No document</span>
-                                                )}
-                                            </td>
-                                            <td style={styles.td}>
-                                                <div style={styles.actionButtonContainer}>
-                                                    <button
-                                                        onClick={() => handleNgoAction(ngo.id, 'approve')}
-                                                        style={styles.approveButton}
-                                                        onMouseOver={(e) => Object.assign(e.currentTarget.style, styles.approveButtonHover)}
-                                                        onMouseOut={(e) => Object.assign(e.currentTarget.style, styles.approveButton)}
-                                                    >
-                                                        Approve
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleNgoAction(ngo.id, 'reject')}
-                                                        style={styles.rejectButton}
-                                                        onMouseOver={(e) => Object.assign(e.currentTarget.style, styles.rejectButtonHover)}
-                                                        onMouseOut={(e) => Object.assign(e.currentTarget.style, styles.rejectButton)}
-                                                    >
-                                                        Reject
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="9" style={{ textAlign: 'center', padding: '2rem', color: '#7f8c8d' }}>No pending NGO applications.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                const pendingNgos = ngos.filter(n => n.status === "Under Review");
+                return pendingNgos.length > 0 ? renderTable(pendingNgos, 'ngo') : (
+                    <div style={styles.emptyState}>
+                        <div style={styles.emptyStateIcon}>🏢</div>
+                        <div style={styles.emptyStateText}>No pending NGO approvals</div>
                     </div>
                 );
             case "allNgos":
-                return (
-                    <div style={styles.tableContainer}>
-                        <table style={styles.table}>
-                            <thead style={styles.thead}>
-                                <tr>
-                                    <th style={styles.th}>ID</th>
-                                    <th style={styles.th}>Name</th>
-                                    <th style={styles.th}>Email</th>
-                                    <th style={styles.th}>Registration Number</th>
-                                    <th style={styles.th}>Address</th>
-                                    <th style={styles.th}>Phone</th>
-                                    <th style={styles.th}>Email Verified</th>
-                                    <th style={styles.th}>Document</th>
-                                    <th style={styles.th}>Status</th>
-                                    <th style={styles.th}>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {ngos.length > 0 ? (
-                                    ngos.map((ngo) => (
-                                        <tr key={ngo.id}>
-                                            <td style={styles.td}>{ngo.id}</td>
-                                            <td style={styles.td}>{ngo.name}</td>
-                                            <td style={styles.td}>{ngo.email}</td>
-                                            <td style={styles.td}>{ngo.registration_number || "N/A"}</td>
-                                            <td style={styles.td}>{ngo.address || "N/A"}</td>
-                                            <td style={styles.td}>{ngo.phone || "N/A"}</td>
-                                            <td style={styles.td}>{ngo.is_email_verified ? "Yes" : "No"}</td>
-                                            <td style={styles.td}>
-                                                {ngo.document_path ? (
-                                                    <a
-                                                        href={`${BACKEND_URL}/uploads/ngo_docs/${ngo.document_path}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{ color: '#3498db', fontWeight: 'bold', textDecoration: 'none' }}
-                                                    >
-                                                        View Document
-                                                    </a>
-                                                ) : (
-                                                    <span style={{ color: '#999' }}>No document</span>
-                                                )}
-                                            </td>
-                                            <td style={styles.td}>
-                                                <span style={{
-                                                    ...styles.statusBadge,
-                                                    ...(ngo.status === 'Approved' ? styles.statusApproved : ngo.status === 'Rejected' ? styles.statusRejected : styles.statusPending)
-                                                }}>
-                                                    {ngo.status}
-                                                </span>
-                                            </td>
-                                            <td style={styles.td}>
-                                                {ngo.status === "Approved" ? (
-                                                    <div style={{ display: "flex", gap: "0.5rem" }}>
-                                                        <button
-                                                            onClick={() => handleNgoAction(ngo.id, "block")}
-                                                            style={{ backgroundColor: "orange", color: "#fff", padding: "0.5rem 1rem", borderRadius: "6px" }}
-                                                        >
-                                                            Block
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleNgoAction(ngo.id, "delete")}
-                                                            style={{ backgroundColor: "red", color: "#fff", padding: "0.5rem 1rem", borderRadius: "6px" }}
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                ) : ngo.status === "Blocked" ? (
-                                                    <button
-                                                        onClick={() => handleNgoAction(ngo.id, "unblock")}
-                                                        style={{ backgroundColor: "green", color: "#fff", padding: "0.5rem 1rem", borderRadius: "6px" }}
-                                                    >
-                                                        Unblock
-                                                    </button>
-                                                ) : (
-                                                    <div style={styles.actionButtonContainer}>
-                                                        <button
-                                                            onClick={() => handleNgoAction(ngo.id, 'approve')}
-                                                            style={styles.approveButton}
-                                                            onMouseOver={(e) => Object.assign(e.currentTarget.style, styles.approveButtonHover)}
-                                                            onMouseOut={(e) => Object.assign(e.currentTarget.style, styles.approveButton)}
-                                                        >
-                                                            Approve
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleNgoAction(ngo.id, 'reject')}
-                                                            style={styles.rejectButton}
-                                                            onMouseOver={(e) => Object.assign(e.currentTarget.style, styles.rejectButtonHover)}
-                                                            onMouseOut={(e) => Object.assign(e.currentTarget.style, styles.rejectButton)}
-                                                        >
-                                                            Reject
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="10" style={{ ...styles.td, textAlign: 'center', color: '#999' }}>
-                                            No NGOs found
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                return ngos.length > 0 ? renderTable(ngos, 'ngo') : (
+                    <div style={styles.emptyState}>
+                        <div style={styles.emptyStateIcon}>🤝</div>
+                        <div style={styles.emptyStateText}>No NGOs found</div>
                     </div>
                 );
             case "reports":
-                const stats = {
-                    approved: donors.filter((d) => d.status === "Approved").length,
-                    rejected: donors.filter((d) => d.status === "Rejected").length,
-                    pending: donors.filter((d) => d.status === "Under Review").length,
-                    ngoApproved: ngos.filter((n) => n.status === "Approved").length,
-                    ngoRejected: ngos.filter((n) => n.status === "Rejected").length,
-                    ngoPending: ngos.filter((n) => n.status === "Under Review").length,
-                };
+                const stats = getStats();
                 return (
-                    <div style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: '10px', boxShadow: '0 5px 15px rgba(0,0,0,0.08)' }}>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#34495e', marginBottom: '1rem' }}>Reports & Analytics</h2>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
-                            <div style={{ backgroundColor: '#e8f7f1', borderRadius: '8px', padding: '1.25rem', border: '1px solid #d4edda' }}>
-                                <p style={{ fontSize: '1.1rem', fontWeight: '600', color: '#2ecc71' }}>✅ Approved Donors</p>
-                                <p style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#27ae60', marginTop: '0.5rem' }}>{stats.approved}</p>
+                    <div>
+                        <div style={styles.statsGrid}>
+                            <div style={styles.statCard}>
+                                <div style={{...styles.statIcon, background: 'rgba(34, 197, 94, 0.1)'}}>
+                                    ✅
+                                </div>
+                                <div style={styles.statValue}>{stats.approvedDonors}</div>
+                                <div style={styles.statLabel}>Approved Donors</div>
                             </div>
-                            <div style={{ backgroundColor: '#fbebed', borderRadius: '8px', padding: '1.25rem', border: '1px solid #f8d7da' }}>
-                                <p style={{ fontSize: '1.1rem', fontWeight: '600', color: '#e74c3c' }}>❌ Rejected Donors</p>
-                                <p style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#c0392b', marginTop: '0.5rem' }}>{stats.rejected}</p>
+                            <div style={styles.statCard}>
+                                <div style={{...styles.statIcon, background: 'rgba(239, 68, 68, 0.1)'}}>
+                                    ❌
+                                </div>
+                                <div style={styles.statValue}>{donors.filter(d => d.status === 'Rejected').length}</div>
+                                <div style={styles.statLabel}>Rejected Donors</div>
                             </div>
-                            <div style={{ backgroundColor: '#fff8e1', borderRadius: '8px', padding: '1.25rem', border: '1px solid #fff3cd' }}>
-                                <p style={{ fontSize: '1.1rem', fontWeight: '600', color: '#f39c12' }}>⏳ Pending Donors</p>
-                                <p style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#e67e22', marginTop: '0.5rem' }}>{stats.pending}</p>
+                            <div style={styles.statCard}>
+                                <div style={{...styles.statIcon, background: 'rgba(245, 158, 11, 0.1)'}}>
+                                    ⏳
+                                </div>
+                                <div style={styles.statValue}>{stats.pendingDonors}</div>
+                                <div style={styles.statLabel}>Pending Donors</div>
                             </div>
-                            <div style={{ backgroundColor: '#e3f2fd', borderRadius: '8px', padding: '1.25rem', border: '1px solid #bbdefb' }}>
-                                <p style={{ fontSize: '1.1rem', fontWeight: '600', color: '#2196f3' }}>🏢 Approved NGOs</p>
-                                <p style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#1976d2', marginTop: '0.5rem' }}>{stats.ngoApproved}</p>
+                            <div style={styles.statCard}>
+                                <div style={{...styles.statIcon, background: 'rgba(168, 85, 247, 0.1)'}}>
+                                    🏢
+                                </div>
+                                <div style={styles.statValue}>{stats.approvedNgos}</div>
+                                <div style={styles.statLabel}>Approved NGOs</div>
                             </div>
-                            <div style={{ backgroundColor: '#fce4ec', borderRadius: '8px', padding: '1.25rem', border: '1px solid #f8bbd9' }}>
-                                <p style={{ fontSize: '1.1rem', fontWeight: '600', color: '#e91e63' }}>❌ Rejected NGOs</p>
-                                <p style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#c2185b', marginTop: '0.5rem' }}>{stats.ngoRejected}</p>
+                            <div style={styles.statCard}>
+                                <div style={{...styles.statIcon, background: 'rgba(156, 163, 175, 0.1)'}}>
+                                    ❌
+                                </div>
+                                <div style={styles.statValue}>{ngos.filter(n => n.status === 'Rejected').length}</div>
+                                <div style={styles.statLabel}>Rejected NGOs</div>
                             </div>
-                            <div style={{ backgroundColor: '#f3e5f5', borderRadius: '8px', padding: '1.25rem', border: '1px solid #e1bee7' }}>
-                                <p style={{ fontSize: '1.1rem', fontWeight: '600', color: '#9c27b0' }}>⏳ Pending NGOs</p>
-                                <p style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#7b1fa2', marginTop: '0.5rem' }}>{stats.ngoPending}</p>
+                            <div style={styles.statCard}>
+                                <div style={{...styles.statIcon, background: 'rgba(245, 158, 11, 0.1)'}}>
+                                    ⏳
+                                </div>
+                                <div style={styles.statValue}>{stats.pendingNgos}</div>
+                                <div style={styles.statLabel}>Pending NGOs</div>
+                            </div>
+                        </div>
+
+                        <div style={styles.card}>
+                            <div style={styles.cardHeader}>
+                                <h3 style={styles.cardTitle}>System Overview</h3>
+                            </div>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem'}}>
+                                <div style={{padding: '1.5rem', background: '#f8fafc', borderRadius: '12px'}}>
+                                    <h4 style={{margin: '0 0 1rem 0', color: '#1e293b'}}>Monthly Growth</h4>
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
+                                        <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                                            <span>New Donors</span>
+                                            <span style={{color: '#16a34a', fontWeight: '600'}}>+12%</span>
+                                        </div>
+                                        <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                                            <span>New NGOs</span>
+                                            <span style={{color: '#16a34a', fontWeight: '600'}}>+8%</span>
+                                        </div>
+                                        <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                                            <span>Total Registrations</span>
+                                            <span style={{color: '#16a34a', fontWeight: '600'}}>+15%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style={{padding: '1.5rem', background: '#f8fafc', borderRadius: '12px'}}>
+                                    <h4 style={{margin: '0 0 1rem 0', color: '#1e293b'}}>Popular Areas</h4>
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
+                                        <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                                            <span>East Gate</span>
+                                            <span style={{fontWeight: '600'}}>45 deliveries</span>
+                                        </div>
+                                        <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                                            <span>North Block</span>
+                                            <span style={{fontWeight: '600'}}>32 deliveries</span>
+                                        </div>
+                                        <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                                            <span>West Side</span>
+                                            <span style={{fontWeight: '600'}}>18 deliveries</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 );
             default:
-                return null;
+                return renderDashboard();
         }
     };
 
     return (
-        <div style={styles.dashboard}>
-            {/* Sidebar */}
-            <aside style={styles.sidebar}>
-                <h2 style={styles.sidebarTitle}>Admin Panel</h2>
-                <div style={{ flexGrow: 1 }}>
-                    {sidebarMenu.map((item) => (
-                        <div
-                            key={item.key}
-                            onClick={() => setActiveView(item.key)}
-                            style={{
-                                ...styles.navItem,
-                                ...(activeView === item.key ? styles.navActive : {}),
-                            }}
-                            onMouseOver={(e) => Object.assign(e.currentTarget.style, styles.navItemHover)}
-                            onMouseOut={(e) => activeView === item.key ? Object.assign(e.currentTarget.style, styles.navActive) : e.currentTarget.style.backgroundColor = 'transparent'}
-                        >
-                            <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
+        <>
+            <style>{spinKeyframes}</style>
+            <div style={styles.dashboard}>
+                {/* Enhanced Sidebar */}
+                <aside style={styles.sidebar}>
+                    <div style={styles.sidebarHeader}>
+                        <div style={styles.logoContainer}>
+                            <div style={styles.logo}>🍽️</div>
                         </div>
-                    ))}
-                </div>
-                <button
-                    onClick={handleLogout}
-                    style={{ ...styles.btn, backgroundColor: '#e74c3c', marginTop: '1rem' }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#c0392b'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#e74c3c'}
-                >
-                    Logout
-                </button>
-            </aside>
-
-            {/* Main Content */}
-            <main style={styles.mainContent}>
-                <h1 style={styles.contentTitle}>{sidebarMenu.find(item => item.key === activeView).label}</h1>
-                {message.text && (
-                    <div
-                        style={{
-                            ...styles.messageBox,
-                            ...(message.type === 'success' ? styles.messageSuccess : styles.messageError),
-                        }}
-                    >
-                        {message.text}
+                        <h2 style={styles.sidebarTitle}>Admin Panel</h2>
+                        <p style={styles.sidebarSubtitle}>Food Donation Platform</p>
                     </div>
-                )}
-                {renderContent()}
-            </main>
-        </div>
+
+                    <nav style={styles.navigation}>
+                        {sidebarMenu.map((item) => (
+                            <div
+                                key={item.key}
+                                onClick={() => setActiveView(item.key)}
+                                style={{
+                                    ...styles.navItem,
+                                    ...(activeView === item.key ? styles.navActive : {}),
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (activeView !== item.key) {
+                                        Object.assign(e.currentTarget.style, styles.navItemHover);
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (activeView !== item.key) {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.transform = 'translateX(0)';
+                                    }
+                                }}
+                            >
+                                {activeView === item.key && <div style={styles.navActiveIndicator}></div>}
+                                <div style={styles.navItemContent}>
+                                    <div style={styles.navIcon}>{item.icon}</div>
+                                    <div style={styles.navText}>
+                                        <div style={styles.navLabel}>{item.label}</div>
+                                        <div style={styles.navDescription}>{item.description}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </nav>
+
+                    <div style={styles.sidebarFooter}>
+                        <button
+                            onClick={handleLogout}
+                            style={styles.logoutButton}
+                            onMouseEnter={(e) => Object.assign(e.currentTarget.style, styles.logoutButtonHover)}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                        >
+                            🚪 Logout
+                        </button>
+                    </div>
+                </aside>
+
+                {/* Main Content Area */}
+                <main style={styles.mainContent}>
+                    {/* Top Bar */}
+                    <div style={styles.topBar}>
+                        <div>
+                            <div style={styles.breadcrumb}>
+                                <span>Admin</span>
+                                <span>•</span>
+                                <span>{sidebarMenu.find(item => item.key === activeView)?.label}</span>
+                            </div>
+                            
+                        </div>
+
+                        {/* Search and Filter Controls */}
+                        {(activeView.includes('Donors') || activeView.includes('Ngos')) && (
+                            <div style={styles.searchContainer}>
+                                <input
+                                    type="text"
+                                    placeholder="Search users..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    style={styles.searchInput}
+                                    onFocus={(e) => Object.assign(e.target.style, styles.searchInputFocus)}
+                                    onBlur={(e) => {
+                                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                                        e.target.style.boxShadow = 'none';
+                                    }}
+                                />
+                                <select
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value)}
+                                    style={styles.filterSelect}
+                                >
+                                    <option value="all" style={{background: '#262424', color: '#f7fafc'}}>All Status</option>
+                                    <option value="approved" style={{background: '#262424', color: '#f7fafc'}}>Approved</option>
+                                    <option value="under review" style={{background: '#262424', color: '#f7fafc'}}>Pending</option>
+                                    <option value="rejected" style={{background: '#262424', color: '#f7fafc'}}>Rejected</option>
+                                    <option value="blocked" style={{background: '#262424', color: '#f7fafc'}}>Blocked</option>
+                                </select>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Content Area */}
+                    <div style={styles.contentArea}>
+                        {message.text && (
+                            <div style={{
+                                ...styles.messageAlert,
+                                ...(message.type === 'success' ? styles.messageSuccess : styles.messageError)
+                            }}>
+                                <span>{message.type === 'success' ? '✅' : '❌'}</span>
+                                {message.text}
+                            </div>
+                        )}
+                        {renderContent()}
+                    </div>
+                </main>
+            </div>
+        </>
     );
 }

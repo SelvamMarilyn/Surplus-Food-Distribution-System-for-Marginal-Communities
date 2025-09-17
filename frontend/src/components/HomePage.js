@@ -1,226 +1,408 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import aboutImage from '../assets/aboutus.png';
+import heroVideo from '../assets/food-hero-video.mp4';
 
 function HomePage() {
   const navigate = useNavigate();
+  const [scrollY, setScrollY] = useState(0);
+  // const [isVisible, setIsVisible] = useState({});
+
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const styles = {
     // --- Overall Page & Layout ---
     page: {
-      fontFamily: '"Poppins", sans-serif',
-      color: '#333',
-      backgroundColor: '#f4f7f6',
+      fontFamily: "'Cormorant Garamond', serif",
+      color: '#f7fafc',
+      backgroundColor: '#121212', // medium black for body
       minHeight: '100vh',
+      lineHeight: '1.6',
     },
     container: {
       maxWidth: '1200px',
       margin: '0 auto',
       padding: '0 20px',
     },
+    
     // --- Navigation Bar ---
     navbar: {
-      backgroundColor: '#fff',
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+      backgroundColor: 'rgba(15, 15, 15, 0.9)',
+      backdropFilter: 'blur(10px)',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
       padding: '1rem 20px',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      position: 'sticky',
+      position: 'fixed',
       top: '0',
+      left: '0',
+      right: '0',
       zIndex: '1000',
+      transition: 'all 0.3s ease',
     },
     logo: {
-      fontWeight: '700',
-      fontSize: '1.7rem',
-      color: '#01947e', // Teal for a fresh feel
+      fontWeight: '800',
+      fontSize: '1.8rem',
+      
+      background: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)',
+      backgroundClip: 'text',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      letterSpacing: '-0.5px',
     },
     navLinks: {
       display: 'flex',
       alignItems: 'center',
-      gap: '1.5rem',
+      gap: '2rem',
     },
     navLink: {
       textDecoration: 'none',
-      color: '#555',
+      color: '#e2e8f0',
       fontWeight: '500',
-      transition: 'color 0.3s ease',
+      fontSize: '1.7rem',
+      transition: 'all 0.3s ease',
       cursor: 'pointer',
+      position: 'relative',
+      padding: '0.5rem 0',
     },
+
+    
     // --- Hero Section ---
     hero: {
-      backgroundColor: '#01947e',
       color: '#fff',
-      padding: '10rem 20px',
+      padding: '12rem 20px 8rem',
       textAlign: 'center',
       position: 'relative',
       overflow: 'hidden',
+      marginTop: '80px',
+    },
+    heroBackground: {
+      position: 'absolute',
+      top: '0',
+      left: '0',
+      right: '0',
+      bottom: '0',
+      background: `
+        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.3) 0%, transparent 50%)
+      `,
+      animation: 'float 20s ease-in-out infinite',
+    },
+    heroContent: {
+      position: 'relative',
+      zIndex: '2',
+    },
+    heroTitle: {
+      fontFamily: "'Great Vibes', cursive",
+      fontSize: "6rem",
+      fontWeight: "400",
+      color: "#fff",
+      marginBottom: '1.5rem',
+      lineHeight: '1.1',
     },
     heroTagline: {
-      fontSize: '1.2rem',
-      maxWidth: '700px',
-      margin: '0 auto',
-      opacity: '0.8',
+      fontSize: '2rem',
+      maxWidth: '600px',
+      margin: '0 auto 2rem',
+      opacity: '0.95',
+      fontWeight: '400',
     },
+    heroStats: {
+      display: 'flex',
+      justifyContent: 'center',
+      gap: '3rem',
+      marginTop: '4rem',
+      flexWrap: 'wrap',
+    },
+    statItem: { textAlign: 'center' },
+    statNumber: { fontSize: '2.5rem', fontWeight: '800', display: 'block', marginBottom: '0.5rem', color: '#020409ff' },
+    statLabel: { fontSize: '0.9rem', opacity: '0.8', textTransform: 'uppercase', letterSpacing: '1px',color: '#020409ff' },
+
+    
     // --- Button Styles ---
-    button: {
-      padding: '1.2rem 3rem',
-      fontSize: '1.1rem',
+    primaryButton: {
+      background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
+      fontFamily: "'Cormorant Garamond', serif",
+      color: '#fff',
+      padding: '1rem 2.5rem',
+      fontSize: '1.5rem',
       fontWeight: '600',
       border: 'none',
       borderRadius: '50px',
       cursor: 'pointer',
-      boxShadow: '0 8px 15px rgba(0, 0, 0, 0.2)',
-      textDecoration: 'none',
-      display: 'inline-block',
-      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+      transition: 'all 0.3s ease',
     },
-    callToActionButton: {
-      background: 'linear-gradient(45deg, #6fa3ddff, #cc80acff)', // New orange-to-yellow gradient
+    secondaryButton: {
+      background: 'transparent',
+      fontFamily: "'Cormorant Garamond', serif",
       color: '#fff',
-      marginTop: '2rem',
-      padding: '1.5rem 4rem', // Significantly increased padding
-      fontSize: '1.3rem', // Larger font size
-      fontWeight: '700',
-      boxShadow: '0 10px 20px rgba(255, 140, 0, 0.4)', // Matching shadow color
-      transform: 'scale(1)',
-      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+      border: '2px solid rgba(255, 255, 255, 0.4)',
+      padding: '0.75rem 2rem',
+      fontSize: '1.7rem',
+      fontWeight: '600',
+      borderRadius: '50px',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
     },
+    loginButton: {
+      background: 'transparent',
+      fontFamily: "'Cormorant Garamond', serif",
+      color: '#feca57',
+      border: '2px solid #feca57',
+      padding: '0.75rem 1.5rem',
+      fontSize: '1rem',
+      fontWeight: '600',
+      borderRadius: '25px',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+    },
+    adminButton: {
+      background: '#ff6b6b',
+      fontFamily: "'Cormorant Garamond', serif",
+      color: 'white',
+      border: 'none',
+      padding: '0.75rem 1.5rem',
+      borderRadius: '25px',
+      cursor: 'pointer',
+      fontSize: '1rem',
+      fontWeight: '600',
+      transition: 'all 0.3s ease',
+    },
+    
     // --- Sections ---
     section: {
       padding: '6rem 0',
-      textAlign: 'center',
     },
     sectionTitle: {
-      fontSize: '2.5rem',
-      color: '#01947e',
-      marginBottom: '4rem',
+      fontSize: 'clamp(2rem, 4vw, 2.5rem)',
+      color: '#2d3748',
+      marginBottom: '1rem',
       fontWeight: '700',
+      textAlign: 'center',
+      letterSpacing: '-0.5px',
     },
-    // --- About Us Section ---
+    sectionSubtitle: {
+      fontSize: '1.5rem',
+      color: '#718096',
+      textAlign: 'center',
+      maxWidth: '600px',
+      margin: '0 auto 4rem',
+      lineHeight: '1.6',
+    },
+    
+    // --- About Section ---
     aboutSection: {
-      backgroundColor: '#fff',
+      backgroundColor: '#f7fafc',
+    },
+    aboutContent: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+      gap: '4rem',
+      alignItems: 'center',
+    },
+    aboutText: {
+      fontSize: '1.5rem',
+      lineHeight: '1.8',
+      color: '#4a5568',
+    },
+    aboutImage: {
+      position: 'relative',
+      borderRadius: '20px',
+      overflow: 'hidden',
+      boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
+    },
+    
+    // --- Features Grid ---
+    featuresGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+      gap: '2rem',
+      marginTop: '4rem',
+    },
+    featureCard: {
+      background: '#262424ff',
+      padding: '2.5rem',
+      borderRadius: '20px',
+      boxShadow: '0 10px 40px rgba(23, 23, 23, 0.1)',
+      transition: 'all 0.3s ease',
+      cursor: 'pointer',
+      border: '1px solid rgba(0, 0, 0, 0.05)',
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    featureIcon: {
+      fontSize: '3rem',
+      marginBottom: '1.5rem',
+      display: 'block',
+    },
+    featureTitle: {
+      fontSize: '1.9rem',
+      fontWeight: '700',
+      color: '#f3f6fbff',
+      marginBottom: '1rem',
+    },
+    featureDescription: {
+      color: '#e2e4e5ff',
+      lineHeight: '1.7',
+      fontSize: '1.5rem',
+    },
+    
+    // --- How It Works ---
+    processStep: {
+      textAlign: 'center',
+      position: 'relative',
+    },
+    stepNumber: {
+      width: '60px',
+      height: '60px',
+      borderRadius: '50%',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: '#fff',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '3rem',
-      flexWrap: 'wrap-reverse',
+      fontSize: '1.9rem',
+      fontWeight: '700',
+      margin: '0 auto 1.5rem',
     },
-    aboutText: {
-      flex: '1',
-      textAlign: 'left',
-      minWidth: '300px',
-      fontSize: '1.1rem',
-      lineHeight: '1.8',
+    stepTitle: {
+      fontSize: '1.7rem',
+      fontWeight: '700',
+      color: '#f0f2f5ff',
+      marginBottom: '1rem',
     },
-    aboutImage: {
-      flex: '1',
-      minWidth: '300px',
-      textAlign: 'center',
-      maxWidth: '500px',
+    stepDescription: {
+      fontSize: '1.5rem',
+      color: '#e2eaf6ff',
+      lineHeight: '1.6',
+      marginBottom: '1.5rem',
     },
-    // --- How It Works Section ---
-    howItWorksGrid: {
+    
+    // --- Testimonials ---
+    testimonialsGrid: {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
       gap: '2rem',
-    },
-    howItWorksItem: {
-      backgroundColor: '#fff',
-      padding: '2.5rem',
-      borderRadius: '15px',
-      boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)',
-      transition: 'transform 0.3s ease',
-      cursor: 'pointer',
-    },
-    icon: {
-      fontSize: '3rem',
-      marginBottom: '1.5rem',
-      color: '#01947e',
-    },
-    // --- Key Features Section ---
-    featuresSection: {
-      backgroundColor: '#f4f7f6',
-    },
-    featureCard: {
-      backgroundColor: '#fff',
-      padding: '2.5rem',
-      borderRadius: '15px',
-      boxShadow: '0 8px 25px rgba(0, 0, 0, 0.08)',
-      transition: 'transform 0.3s ease',
-      cursor: 'pointer',
-      height: '100%',
-    },
-    featureIcon: {
-      fontSize: '2.5em',
-      color: '#01947e',
-      marginBottom: '1rem',
-    },
-    // --- Testimonials Section ---
-    testimonialsSection: {
-      backgroundColor: '#e8f2f0',
+      marginTop: '4rem',
     },
     testimonialCard: {
-      backgroundColor: '#fff',
+      background: '#fff',
       padding: '2rem',
-      borderRadius: '10px',
-      boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
-      marginBottom: '1.5rem',
-      textAlign: 'left',
-      fontStyle: 'italic',
+      borderRadius: '15px',
+      boxShadow: '0 10px 30px rgba(248, 244, 244, 0.76)',
       position: 'relative',
-      transition: 'transform 0.3s ease',
-      borderLeft: '4px solid #01947e',
+      transition: 'all 0.3s ease',
     },
-    quoteIcon: {
-      position: 'absolute',
-      top: '1rem',
-      left: '1rem',
-      fontSize: '2em',
-      color: '#ddd',
+    testimonialQuote: {
+      fontSize: '1.6rem',
+      lineHeight: '1.7',
+      color: '#111111ff',
+      marginBottom: '1.5rem',
+      fontStyle: 'italic',
     },
     testimonialAuthor: {
-      fontWeight: '600',
-      marginTop: '1rem',
-      display: 'block',
-      color: '#555',
-      fontStyle: 'normal',
+      fontSize: '1.6rem',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '1rem',
     },
-    // --- Final Call to Action ---
-    finalCta: {
-      backgroundColor: '#2c3e50',
+    authorAvatar: {
+      width: '50px',
+      height: '50px',
+      borderRadius: '50%',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       color: '#fff',
+      fontSize: '1.2rem',
+      fontWeight: '700',
     },
+    authorInfo: {
+      flex: '1',
+    },
+    authorName: {
+      fontSize: '1.6rem',
+      fontWeight: '600',
+      color: '#2d3748',
+      marginBottom: '0.25rem',
+    },
+    authorTitle: {
+      color: '#718096',
+      fontSize: '1.4rem',
+    },
+    
+    // --- CTA Section ---
+    ctaSection: {
+      background: 'linear-gradient(135deg, #f6f8faff 0%, #4a5568 100%)',
+      color: '#020000ff',
+      textAlign: 'center',
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    ctaContent: {
+      position: 'relative',
+      zIndex: '2',
+    },
+    
     // --- Footer ---
     footer: {
-      backgroundColor: '#2c3e50',
-      color: '#f4f7f6',
-      padding: '3rem 20px',
+     background: 'linear-gradient(135deg, #f6f8faff 0%, #4a5568 100%)',
+      padding: '3rem 20px 2rem',
       textAlign: 'center',
+    },
+    
+    // --- Animations ---
+    '@keyframes float': {
+      '0%, 100%': { transform: 'translateY(0px)' },
+      '50%': { transform: 'translateY(-20px)' },
+    },
+    '@keyframes fadeInUp': {
+      from: {
+        opacity: '0',
+        transform: 'translateY(30px)',
+      },
+      to: {
+        opacity: '1',
+        transform: 'translateY(0)',
+      },
+    },
+  };
+
+  // Enhanced hover effects
+  const handleButtonHover = (e, isHovering, type = 'primary') => {
+    if (type === 'primary') {
+      e.currentTarget.style.transform = isHovering ? 'translateY(-3px) scale(1.02)' : 'translateY(0) scale(1)';
+      e.currentTarget.style.boxShadow = isHovering ? '0 15px 40px rgba(255, 107, 107, 0.4)' : '0 10px 30px rgba(255, 107, 107, 0.3)';
+    } else if (type === 'secondary') {
+      e.currentTarget.style.background = isHovering ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)';
+      e.currentTarget.style.transform = isHovering ? 'translateY(-2px)' : 'translateY(0)';
+    } else if (type === 'login') {
+      e.currentTarget.style.background = isHovering ? '#667eea' : 'rgba(102, 126, 234, 0.1)';
+      e.currentTarget.style.color = isHovering ? '#fff' : '#667eea';
+    } else if (type === 'admin') {
+      e.currentTarget.style.background = isHovering ? '#4a5568' : '#2d3748';
+      e.currentTarget.style.transform = isHovering ? 'translateY(-2px)' : 'translateY(0)';
     }
   };
 
-  // --- Hover and Click Logic ---
-  const handleButtonHover = (e, isHovering) => {
-    e.currentTarget.style.transform = isHovering ? 'translateY(-5px)' : 'translateY(0)';
-    e.currentTarget.style.boxShadow = isHovering ? '0 12px 20px rgba(0, 0, 0, 0.3)' : '0 8px 15px rgba(0, 0, 0, 0.2)';
-  };
-  
-  const handleCallToActionButtonHover = (e, isHovering) => {
-    e.currentTarget.style.transform = isHovering ? 'scale(1.05) translateY(-5px)' : 'scale(1) translateY(0)';
-    e.currentTarget.style.boxShadow = isHovering ? '0 15px 30px rgba(255, 140, 0, 0.6)' : '0 10px 20px rgba(255, 140, 0, 0.4)';
-  };
-
-  const handleItemHover = (e, isHovering) => {
+  const handleCardHover = (e, isHovering) => {
     e.currentTarget.style.transform = isHovering ? 'translateY(-10px)' : 'translateY(0)';
-    e.currentTarget.style.boxShadow = isHovering ? '0 15px 30px rgba(0, 0, 0, 0.15)' : '0 8px 25px rgba(0, 0, 0, 0.1)';
+    e.currentTarget.style.boxShadow = isHovering ? '0 20px 60px rgba(0, 0, 0, 0.15)' : '0 10px 40px rgba(0, 0, 0, 0.1)';
   };
 
-  const handleLinkHover = (e, isHovering) => {
-    e.currentTarget.style.color = isHovering ? '#01b89d' : '#555';
+  const handleNavLinkHover = (e, isHovering) => {
+    e.currentTarget.style.color = isHovering ? '#667eea' : '#4a5568';
+    e.currentTarget.style.transform = isHovering ? 'translateY(-1px)' : 'translateY(0)';
   };
 
-  // --- Functionality Buttons ---
+  // Navigation functions
   const handleGetStarted = () => navigate('/register-donor');
   const handleRegisterDonor = () => navigate('/register-donor');
   const handleRegisterNGO = () => navigate('/register-ngo');
@@ -228,182 +410,319 @@ function HomePage() {
 
   return (
     <div style={styles.page}>
-      
-      {/* Navigation Bar */}
+      {/* Enhanced Navigation */}
       <nav style={styles.navbar}>
-        <div style={styles.logo}>FoodBridge</div>
+        <div style={styles.logo}>HopeBites</div>
         <div style={styles.navLinks}>
-          <a href="#about" style={styles.navLink} onMouseEnter={(e) => handleLinkHover(e, true)} onMouseLeave={(e) => handleLinkHover(e, false)}>About</a>
-          <a href="#howitworks" style={styles.navLink} onMouseEnter={(e) => handleLinkHover(e, true)} onMouseLeave={(e) => handleLinkHover(e, false)}>How It Works</a>
-          <a href="#features" style={styles.navLink} onMouseEnter={(e) => handleLinkHover(e, true)} onMouseLeave={(e) => handleLinkHover(e, false)}>Features</a>
-          <a href="#testimonials" style={styles.navLink} onMouseEnter={(e) => handleLinkHover(e, true)} onMouseLeave={(e) => handleLinkHover(e, false)}>Testimonials</a>
+          <a href="#about" style={styles.navLink} 
+             onMouseEnter={(e) => handleNavLinkHover(e, true)} 
+             onMouseLeave={(e) => handleNavLinkHover(e, false)}>About</a>
+          <a href="#process" style={styles.navLink}
+             onMouseEnter={(e) => handleNavLinkHover(e, true)} 
+             onMouseLeave={(e) => handleNavLinkHover(e, false)}>How It Works</a>
+          <a href="#features" style={styles.navLink}
+             onMouseEnter={(e) => handleNavLinkHover(e, true)} 
+             onMouseLeave={(e) => handleNavLinkHover(e, false)}>Features</a>
+          <a href="#testimonials" style={styles.navLink}
+             onMouseEnter={(e) => handleNavLinkHover(e, true)} 
+             onMouseLeave={(e) => handleNavLinkHover(e, false)}>Success Stories</a>
+          
           <button
-             style={{ ...styles.button, backgroundColor: '#f0f0f0', color: '#333', padding: '0.75rem 1.5rem', fontSize: '0.9rem', boxShadow: 'none' }} 
-             onMouseEnter={(e) => handleButtonHover(e, true)} 
-             onMouseLeave={(e) => handleButtonHover(e, false)} 
-             onClick={handleLogin}>Login</button>
+            style={styles.loginButton}
+            onMouseEnter={(e) => handleButtonHover(e, true, 'login')}
+            onMouseLeave={(e) => handleButtonHover(e, false, 'login')}
+            onClick={handleLogin}>
+            Login
+          </button>
+          
           <Link to="/admin">
-            <button style={{
-                padding: '10px 20px',
-                backgroundColor: '#555',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer'
-            }}>
-                Go to Admin Panel
+            <button 
+              style={styles.adminButton}
+              onMouseEnter={(e) => handleButtonHover(e, true, 'admin')}
+              onMouseLeave={(e) => handleButtonHover(e, false, 'admin')}>
+              Admin Panel
             </button>
-        </Link>
+          </Link>
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Enhanced Hero Section */}
       <header style={styles.hero}>
-        <div style={styles.container}>
-          <h1 style={{ fontSize: '3.5rem', marginBottom: '1rem', fontWeight: '700' }}>Surplus Food Distribution System</h1>
-          <p style={styles.heroTagline}>Bridging the gap between food surplus and community needs, with technology.</p>
-          <button 
-            style={styles.callToActionButton} 
-            onMouseEnter={(e) => handleCallToActionButtonHover(e, true)} 
-            onMouseLeave={(e) => handleCallToActionButtonHover(e, false)} 
-            onClick={handleGetStarted}>Get Started Now</button>
+        <video autoPlay muted loop playsInline
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}>
+          <source src={heroVideo} type="video/mp4" />
+        </video>
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', zIndex: 1 }}></div>
+
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <h1 style={styles.heroTitle}>Surplus for Sustenance</h1>
+          <p style={styles.heroTagline}>
+            Connect food donors with community partners through intelligent matching, 
+            transparent delivery tracking, and real-time impact measurement.
+          </p>
+          <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button style={styles.primaryButton} onClick={handleLogin}>Start Donating Today</button>
+            <button style={styles.secondaryButton}>Watch Demo</button>
+          </div>
         </div>
       </header>
 
-      {/* About Us Section */}
+      {/* Enhanced About Section */}
       <section id="about" style={{...styles.section, ...styles.aboutSection}}>
-        <div style={{...styles.container, display: 'flex', alignItems: 'center', gap: '3rem', flexWrap: 'wrap-reverse', textAlign: 'left'}}>
-          <div style={styles.aboutText}>
-            <h2 style={{...styles.sectionTitle, textAlign: 'left', marginBottom: '1.5rem'}}>About Our Mission</h2>
-            <p>The Surplus Food Distribution System is a purpose-driven platform designed to connect **food donors** (restaurants, catering services) with **Community Service Partners** (NGOs). Our mission is to efficiently manage the distribution of surplus food, ensuring it reaches vulnerable communities and marginalized groups, thereby reducing food waste and combating hunger.</p>
-            <p>By leveraging technology and a robust network of partners, we aim to create a sustainable and scalable solution to a global problem. We believe in transparency, efficiency, and the power of community.</p>
-          </div>
-          <div style={styles.aboutImage}>
-            <img src={aboutImage} alt="Our mission in action" style={{maxWidth: '100%', height: 'auto', borderRadius: '10px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)'}} />
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section id="howitworks" style={{...styles.section, backgroundColor: '#e8f2f0'}}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>How It Works</h2>
-          <div style={styles.howItWorksGrid}>
-            <div 
-              style={styles.howItWorksItem} 
-              onMouseEnter={(e) => handleItemHover(e, true)} 
-              onMouseLeave={(e) => handleItemHover(e, false)}>
-              <div style={styles.icon}>🛒</div>
-              <h3 style={{fontSize: '1.4rem', marginBottom: '0.5rem'}}>1. Donate Food</h3>
-              <p>Verified donors post details of their surplus food, including photos and quantity.</p>
-              <button 
-                style={{...styles.button, backgroundColor: '#01947e', color: '#fff', padding: '0.75rem 1.5rem', fontSize: '0.9rem'}} 
-                onMouseEnter={(e) => handleButtonHover(e, true)} 
-                onMouseLeave={(e) => handleButtonHover(e, false)} 
-                onClick={handleRegisterDonor}>Register as a Donor</button>
+          <h2 style={styles.sectionTitle}>Bridging Communities Through Technology</h2>
+          <p style={styles.sectionSubtitle}>
+            We're revolutionizing food distribution by creating intelligent connections between surplus and need.
+          </p>
+          
+          <div style={styles.aboutContent}>
+            <div style={styles.aboutText}>
+              <h3 style={{ fontSize: '2rem', fontWeight: '700', color: '#2d3748', marginBottom: '1.5rem' }}>
+                Our Mission
+              </h3>
+              <p style={{ marginBottom: '1.5rem' }}>
+                HopeBites leverages cutting-edge technology to create seamless connections between food donors 
+                and community service partners. Our intelligent platform ensures that surplus food reaches 
+                vulnerable communities efficiently and transparently.
+              </p>
+              <p style={{ marginBottom: '1.5rem' }}>
+                Through real-time matching algorithms, geo-tagged delivery verification, and comprehensive 
+                impact tracking, we're building a sustainable ecosystem that reduces waste while fighting hunger.
+              </p>
+              <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem' }}>
+                <div>
+                  <h4 style={{ fontWeight: '700', color: '#667eea', fontSize: '1.8rem', marginBottom: '0.5rem' }}>95%</h4>
+                  <p style={{ color: '#718096', fontSize: '1.2rem' }}>Delivery Success Rate</p>
+                </div>
+                <div>
+                  <h4 style={{ fontWeight: '700', color: '#667eea', fontSize: '1.8rem', marginBottom: '0.5rem' }}>24/7</h4>
+                  <p style={{ color: '#718096', fontSize: '1.2rem' }}>Platform Availability</p>
+                </div>
+              </div>
             </div>
-            <div 
-              style={styles.howItWorksItem} 
-              onMouseEnter={(e) => handleItemHover(e, true)} 
-              onMouseLeave={(e) => handleItemHover(e, false)}>
-              <div style={styles.icon}>🎯</div>
-              <h3 style={{fontSize: '1.4rem', marginBottom: '0.5rem'}}>2. Smart Matching</h3>
-              <p>Our intelligent algorithm connects your donation to the most suitable NGO based on location and need.</p>
-              <button 
-                style={{...styles.button, backgroundColor: '#007BFF', color: '#fff', padding: '0.75rem 1.5rem', fontSize: '0.9rem'}} 
-                onMouseEnter={(e) => handleButtonHover(e, true)} 
-                onMouseLeave={(e) => handleButtonHover(e, false)}>Learn More</button>
-            </div>
-            <div 
-              style={styles.howItWorksItem} 
-              onMouseEnter={(e) => handleItemHover(e, true)} 
-              onMouseLeave={(e) => handleItemHover(e, false)}>
-              <div style={styles.icon}>🚚</div>
-              <h3 style={{fontSize: '1.4rem', marginBottom: '0.5rem'}}>3. Verified Delivery</h3>
-              <p>Our NGO partners deliver the food and provide geo-tagged proof of delivery to ensure transparency.</p>
-              <button 
-                style={{...styles.button, backgroundColor: '#28A745', color: '#fff', padding: '0.75rem 1.5rem', fontSize: '0.9rem'}} 
-                onMouseEnter={(e) => handleButtonHover(e, true)} 
-                onMouseLeave={(e) => handleButtonHover(e, false)} 
-                onClick={handleRegisterNGO}>Register as an NGO</button>
+            <div style={styles.aboutImage}>
+              <img src={aboutImage} alt="Impact visualization" 
+                   style={{ width: '100%', height: 'auto', display: 'block' }} />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Key Features Section */}
-      <section id="features" style={{...styles.section, ...styles.featuresSection}}>
+      {/* Enhanced Process Section */}
+      <section id="process" style={styles.section}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Key Features</h2>
-          <div style={styles.howItWorksGrid}>
-            <div 
-              style={styles.featureCard} 
-              onMouseEnter={(e) => handleItemHover(e, true)} 
-              onMouseLeave={(e) => handleItemHover(e, false)}>
-              <div style={styles.featureIcon}>✅</div>
-              <h3 style={{fontSize: '1.4rem', marginBottom: '0.5rem'}}>Smart Matching</h3>
-              <p>Our intelligent system uses location data and needs-based algorithms to connect donors with the nearest and most suitable NGOs.</p>
+          <h2 style={styles.sectionTitle}>How HopeBites Works</h2>
+          <p style={styles.sectionSubtitle}>
+            A streamlined process designed for maximum impact and minimum friction.
+          </p>
+          
+          <div style={styles.featuresGrid}>
+            <div style={styles.processStep}>
+              <div style={styles.stepNumber}>1</div>
+              <h3 style={styles.stepTitle}>Smart Food Posting</h3>
+              <p style={styles.stepDescription}>
+                Donors upload surplus food details with photos, quantity, and pickup preferences. 
+                Our AI categorizes and prioritizes based on urgency and nutritional value.
+              </p>
+              <button 
+                style={{...styles.primaryButton, fontSize: '1.5rem', padding: '0.75rem 2rem'}}
+                onMouseEnter={(e) => handleButtonHover(e, true, 'primary')}
+                onMouseLeave={(e) => handleButtonHover(e, false, 'primary')}
+                onClick={handleRegisterDonor}>
+                Become a Donor
+              </button>
             </div>
-            <div 
-              style={styles.featureCard} 
-              onMouseEnter={(e) => handleItemHover(e, true)} 
-              onMouseLeave={(e) => handleItemHover(e, false)}>
-              <div style={styles.featureIcon}>📸</div>
-              <h3 style={{fontSize: '1.4rem', marginBottom: '0.5rem'}}>Transparent Reporting</h3>
-              <p>Donors receive geo-tagged photos and delivery confirmations, providing peace of mind that their donations reached their intended destination.</p>
+            
+            <div style={styles.processStep}>
+              <div style={styles.stepNumber}>2</div>
+              <h3 style={styles.stepTitle}>Intelligent Matching</h3>
+              <p style={styles.stepDescription}>
+                Our algorithm considers location proximity, NGO capacity, community needs, 
+                and historical data to create optimal matches in real-time.
+              </p>
+              <button 
+                style={{...styles.secondaryButton, color: '#667eea', border: '2px solid #667eea', fontFamily: "'Cormorant Garamond', serif",fontSize: '1.5rem', padding: '0.75rem 2rem'}}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#667eea';
+                  e.currentTarget.style.color = '#fff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#667eea';
+                }}>
+                See Algorithm
+              </button>
             </div>
-            <div 
-              style={styles.featureCard} 
-              onMouseEnter={(e) => handleItemHover(e, true)} 
-              onMouseLeave={(e) => handleItemHover(e, false)}>
-              <div style={styles.featureIcon}>📍</div>
-              <h3 style={{fontSize: '1.4rem', marginBottom: '0.5rem'}}>Heat Map View</h3>
-              <p>NGOs can view a real-time heat map of food surplus hotspots, allowing them to plan logistics and prioritize pick-ups efficiently.</p>
+            
+            <div style={styles.processStep}>
+              <div style={styles.stepNumber}>3</div>
+              <h3 style={styles.stepTitle}>Verified Impact</h3>
+              <p style={styles.stepDescription}>
+                NGOs provide geo-tagged delivery confirmations with recipient counts and photos, 
+                creating a transparent chain of impact for every donation.
+              </p>
+              <button 
+                style={{...styles.primaryButton, background: 'linear-gradient(135deg, #10ac84 0%, #1dd1a1 100%)', fontSize: '1.5rem', padding: '0.75rem 2rem'}}
+                onMouseEnter={(e) => handleButtonHover(e, true, 'primary')}
+                onMouseLeave={(e) => handleButtonHover(e, false, 'primary')}
+                onClick={handleRegisterNGO}>
+                Join as NGO
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section id="testimonials" style={{...styles.section, backgroundColor: '#fff'}}>
+      {/* Enhanced Features Section */}
+      <section id="features" style={{...styles.section, backgroundColor: '#f7fafc'}}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>What Our Partners Tell</h2>
-          <div style={styles.howItWorksGrid}>
+          <h2 style={styles.sectionTitle}>Platform Features</h2>
+          <p style={styles.sectionSubtitle}>
+            Advanced technology meets social impact through these core capabilities.
+          </p>
+          
+          <div style={styles.featuresGrid}>
             <div 
-              style={styles.testimonialCard} 
-              onMouseEnter={(e) => handleItemHover(e, true)} 
-              onMouseLeave={(e) => handleItemHover(e, false)}>
-              <p>"This platform has completely transformed how we receive donations. The smart matching feature saves us so much time and ensures we get food to those who need it most, without delay."</p>
-              <span style={styles.testimonialAuthor}>- Jane Doe, Director, Food for All</span>
+              style={styles.featureCard}
+              onMouseEnter={(e) => handleCardHover(e, true)}
+              onMouseLeave={(e) => handleCardHover(e, false)}>
+              <div style={{...styles.featureIcon, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
+                🎯
+              </div>
+              <h3 style={styles.featureTitle}>AI-Powered Matching</h3>
+              <p style={styles.featureDescription}>
+                Machine learning algorithms analyze donor patterns, NGO capacity, and community needs 
+                to create optimal matches that maximize impact and minimize waste.
+              </p>
             </div>
+            
             <div 
-              style={styles.testimonialCard} 
-              onMouseEnter={(e) => handleItemHover(e, true)} 
-              onMouseLeave={(e) => handleItemHover(e, false)}>
-              <p>"As a restaurant owner, it feels great to know my surplus food isn't going to waste. The process is simple, and I can see the impact of my donations in real-time."</p>
-              <span style={styles.testimonialAuthor}>- John Smith, Owner, Urban Kitchen</span>
+              style={styles.featureCard}
+              onMouseEnter={(e) => handleCardHover(e, true)}
+              onMouseLeave={(e) => handleCardHover(e, false)}>
+              <div style={{...styles.featureIcon, background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
+                📍
+              </div>
+              <h3 style={styles.featureTitle}>Real-Time Tracking</h3>
+              <p style={styles.featureDescription}>
+                Live GPS tracking, delivery confirmations, and impact metrics provide complete 
+                transparency from donation to distribution.
+              </p>
+            </div>
+            
+            <div 
+              style={styles.featureCard}
+              onMouseEnter={(e) => handleCardHover(e, true)}
+              onMouseLeave={(e) => handleCardHover(e, false)}>
+              <div style={{...styles.featureIcon, background: 'linear-gradient(135deg, #10ac84 0%, #1dd1a1 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
+                📊
+              </div>
+              <h3 style={styles.featureTitle}>Impact Analytics</h3>
+              <p style={styles.featureDescription}>
+                Comprehensive dashboards show donation history, community impact, 
+                environmental savings, and social outcomes with detailed reporting.
+              </p>
             </div>
           </div>
         </div>
       </section>
-      
-      {/* Final Call to Action Section */}
-      <section style={{...styles.section, ...styles.finalCta}}>
+
+      {/* Enhanced Testimonials */}
+      <section id="testimonials" style={styles.section}>
         <div style={styles.container}>
-          <h2 style={{...styles.sectionTitle, color: '#fff', marginBottom: '20px'}}>Join Our Mission to End Hunger</h2>
-          <p style={{color: '#e0e0e0', fontSize: '1.2em', marginBottom: '40px'}}>Sign up today to start making a difference, one meal at a time.</p>
-          <button 
-            style={{...styles.button, backgroundColor: '#01947e', color: '#fff'}} 
-            onMouseEnter={(e) => handleButtonHover(e, true)} 
-            onMouseLeave={(e) => handleButtonHover(e, false)} 
-            onClick={handleGetStarted}>Join Now</button>
+          <h2 style={styles.sectionTitle}>Success Stories</h2>
+          <p style={styles.sectionSubtitle}>
+            Hear from the partners and communities transforming lives through HopeBites.
+          </p>
+          
+          <div style={styles.testimonialsGrid}>
+            <div 
+              style={styles.testimonialCard}
+              onMouseEnter={(e) => handleCardHover(e, true)}
+              onMouseLeave={(e) => handleCardHover(e, false)}>
+              <p style={styles.testimonialQuote}>
+                "HopeBites has revolutionized our operations. The intelligent matching system connects us 
+                with the right donors at the right time, and the impact tracking helps us show real results to our stakeholders."
+              </p>
+              <div style={styles.testimonialAuthor}>
+                <div style={styles.authorAvatar}>MR</div>
+                <div style={styles.authorInfo}>
+                  <div style={styles.authorName}>Maria Rodriguez</div>
+                  <div style={styles.authorTitle}>Operations Manager, Hope Foundation</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
-      
-      {/* Footer */}
+{/* Enhanced Footer */}
       <footer style={styles.footer}>
+      {/* Enhanced Call-to-Action Section */}
+      {/* <section style={{...styles.section, ...styles.ctaSection}}> */}
         <div style={styles.container}>
-          <p>© 2024 FoodBridge. All Rights Reserved.</p>
+          <div style={styles.ctaContent}>
+            <h2 style={{...styles.sectionTitle, color: '#fff', marginBottom: '1rem'}}>
+              Ready to Make an Impact?
+            </h2>
+            <p style={{...styles.sectionSubtitle, color: 'rgba(255, 255, 255, 0.8)', marginBottom: '3rem'}}>
+              Join thousands of donors and NGOs creating positive change in communities worldwide.
+            </p>
+            
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button 
+                style={{...styles.primaryButton, background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)'}}
+                onMouseEnter={(e) => handleButtonHover(e, true, 'primary')}
+                onMouseLeave={(e) => handleButtonHover(e, false, 'primary')}
+                onClick={handleLogin}>
+                Start Your Journey
+              </button>
+              <button 
+                style={styles.secondaryButton}
+                onMouseEnter={(e) => handleButtonHover(e, true, 'secondary')}
+                onMouseLeave={(e) => handleButtonHover(e, false, 'secondary')}>
+                Learn More
+              </button>
+            </div>
+
+            {/* Additional CTA Stats */}
+            <div style={{...styles.heroStats, marginTop: '4rem', opacity: '0.9'}}>
+              <div style={styles.statItem}>
+                <span style={{...styles.statNumber, fontSize: '2rem'}}>0</span>
+                <span style={styles.statLabel}>Setup Cost</span>
+              </div>
+              <div style={styles.statItem}>
+                <span style={{...styles.statNumber, fontSize: '2rem'}}>5min</span>
+                <span style={styles.statLabel}>Quick Setup</span>
+              </div>
+              <div style={styles.statItem}>
+                <span style={{...styles.statNumber, fontSize: '2rem'}}>24/7</span>
+                <span style={styles.statLabel}>Support</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      {/* </section> */}
+      
+      
+        <div style={styles.container}>
+          <div style={{ 
+            borderTop: '1px solid #e6e9efff', 
+            paddingTop: '2rem', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem'
+          }}>
+            <p style={{ color: '#020409ff',margin: '0', fontSize: '1.5rem' }}>
+              © 2025 HopeBites. All rights reserved.
+            </p>
+            <div style={{ display: 'flex', gap: '1.5rem' }}>
+              <a href="#privacy" style={{ color: '#020409ff', textDecoration: 'none', fontSize: '1.5rem' }}>Privacy</a>
+              <a href="#terms" style={{ color: '#020409ff', textDecoration: 'none', fontSize: '1.5rem' }}>Terms</a>
+              <a href="#cookies" style={{ color: '#020409ff', textDecoration: 'none', fontSize: '1.5rem' }}>Cookies</a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
